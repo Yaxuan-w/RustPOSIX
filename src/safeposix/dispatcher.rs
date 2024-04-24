@@ -113,12 +113,12 @@ const SYNC_FILE_RANGE: i32 = 164;
 
 use crate::interface;
 use super::cage::*;
-use super::filesystem::{FS_METADATA, load_fs, incref_root, remove_domain_sock, persist_metadata, LOGMAP, LOGFILENAME, FilesystemMetadata};
+// use super::filesystem::{FS_METADATA, load_fs, incref_root, remove_domain_sock, persist_metadata, LOGMAP, LOGFILENAME, FilesystemMetadata};
 use super::shm::{SHM_METADATA};
 use super::net::{NET_METADATA};
 use crate::interface::errnos::*;
 use super::syscalls::{sys_constants::*, fs_constants::IPC_STAT};
-use crate::lib_fs_utils::{visit_children, lind_deltree};
+// use crate::lib_fs_utils::{visit_children, lind_deltree};
 
 macro_rules! get_onearg {
     ($arg: expr) => {
@@ -197,15 +197,15 @@ pub extern "C" fn dispatcher(cageid: u64, callnum: i32, arg1: Arg, arg2: Arg, ar
         CHDIR_SYSCALL => {
             check_and_dispatch!(cage.chdir_syscall, interface::get_cstr(arg1))
         }
-        FSYNC_SYSCALL => {
-            check_and_dispatch!(cage.fsync_syscall, interface::get_int(arg1))
-        }
-        FDATASYNC_SYSCALL => {
-            check_and_dispatch!(cage.fdatasync_syscall, interface::get_int(arg1))
-        }
-        SYNC_FILE_RANGE =>{
-            check_and_dispatch!(cage.sync_file_range_syscall, interface::get_int(arg1), interface::get_isize(arg2), interface::get_isize(arg3), interface::get_uint(arg4))
-        }
+        // FSYNC_SYSCALL => {
+        //     check_and_dispatch!(cage.fsync_syscall, interface::get_int(arg1))
+        // }
+        // FDATASYNC_SYSCALL => {
+        //     check_and_dispatch!(cage.fdatasync_syscall, interface::get_int(arg1))
+        // }
+        // SYNC_FILE_RANGE =>{
+        //     check_and_dispatch!(cage.sync_file_range_syscall, interface::get_int(arg1), interface::get_isize(arg2), interface::get_isize(arg3), interface::get_uint(arg4))
+        // }
         FCHDIR_SYSCALL => {
             check_and_dispatch!(cage.fchdir_syscall, interface::get_int(arg1))
         }
@@ -233,9 +233,9 @@ pub extern "C" fn dispatcher(cageid: u64, callnum: i32, arg1: Arg, arg2: Arg, ar
         FSTATFS_SYSCALL => {
             check_and_dispatch!(cage.fstatfs_syscall, interface::get_int(arg1), interface::get_fsdatastruct(arg2))
         }
-        MMAP_SYSCALL => {
-            check_and_dispatch!(cage.mmap_syscall, interface::get_mutcbuf(arg1), interface::get_usize(arg2), interface::get_int(arg3), interface::get_int(arg4), interface::get_int(arg5), interface::get_long(arg6))
-        }
+        // MMAP_SYSCALL => {
+        //     check_and_dispatch!(cage.mmap_syscall, interface::get_mutcbuf(arg1), interface::get_usize(arg2), interface::get_int(arg3), interface::get_int(arg4), interface::get_int(arg5), interface::get_long(arg6))
+        // }
         MUNMAP_SYSCALL => {
             check_and_dispatch!(cage.munmap_syscall, interface::get_mutcbuf(arg1), interface::get_usize(arg2))
         }
@@ -600,17 +600,17 @@ fn cleartmp(init: bool) {
     let cage = interface::cagetable_getref(0);
     let mut statdata = StatData::default();
     
-    if cage.stat_syscall(path, &mut statdata) == 0 {
-        visit_children(&cage, path, None, |childcage, childpath, isdir, _| {
-            if isdir { lind_deltree(childcage, childpath); }
-            else { childcage.unlink_syscall(childpath);}
-        });
-    }
-    else {
-        if init  == true {
-            cage.mkdir_syscall(path, S_IRWXA);
-        } 
-    }
+    // if cage.stat_syscall(path, &mut statdata) == 0 {
+    //     visit_children(&cage, path, None, |childcage, childpath, isdir, _| {
+    //         if isdir { lind_deltree(childcage, childpath); }
+    //         else { childcage.unlink_syscall(childpath);}
+    //     });
+    // }
+    // else {
+    //     if init  == true {
+    //         cage.mkdir_syscall(path, S_IRWXA);
+    //     } 
+    // }
 }
 
 #[no_mangle]
@@ -640,7 +640,9 @@ pub extern "C" fn lindgetsighandler(cageid: u64, signo: i32) -> u32 {
 pub extern "C" fn lindrustinit(verbosity: isize) {
     let _ = interface::VERBOSE.set(verbosity); //assigned to suppress unused result warning
     interface::cagetable_init();
-    load_fs();
+
+    
+    // load_fs();
     incref_root();
     incref_root();
 
@@ -707,12 +709,12 @@ pub extern "C" fn lindrustfinalize() {
     cleartmp(false);
     interface::cagetable_clear();
     // if we get here, persist and delete log
-    persist_metadata(&FS_METADATA);
-    if interface::pathexists(LOGFILENAME.to_string()) {
-        // remove file if it exists, assigning it to nothing to avoid the compiler yelling about unused result
-        let mut logobj = LOGMAP.write();
-        let log = logobj.take().unwrap();
-        let _close = log.close().unwrap();
-        let _logremove = interface::removefile(LOGFILENAME.to_string());
-    }
+    // persist_metadata(&FS_METADATA);
+    // if interface::pathexists(LOGFILENAME.to_string()) {
+    //     // remove file if it exists, assigning it to nothing to avoid the compiler yelling about unused result
+    //     let mut logobj = LOGMAP.write();
+    //     let log = logobj.take().unwrap();
+    //     let _close = log.close().unwrap();
+    //     let _logremove = interface::removefile(LOGFILENAME.to_string());
+    // }
 }

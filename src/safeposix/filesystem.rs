@@ -10,17 +10,27 @@ use super::cage::Cage;
 
 pub const METADATAFILENAME: &str = "lind.metadata";
 
+/* A.W.: 
+*   Commented
+*/
 pub const LOGFILENAME: &str = "lind.md.log";
 
-pub static LOGMAP: interface::RustLazyGlobal<interface::RustRfc<interface::RustLock<Option<interface::EmulatedFileMap>>>> = 
-    interface::RustLazyGlobal::new(|| 
-        interface::RustRfc::new(interface::RustLock::new(None))
-);
+// pub static LOGMAP: interface::RustLazyGlobal<interface::RustRfc<interface::RustLock<Option<interface::EmulatedFileMap>>>> = 
+//     interface::RustLazyGlobal::new(|| 
+//         interface::RustRfc::new(interface::RustLock::new(None))
+// );
 
+/* A.W.: 
+*   [Wait for change]
+*   - Change in init_fs_metadata
+*/
 pub static FS_METADATA: interface::RustLazyGlobal<interface::RustRfc<FilesystemMetadata>> = 
     interface::RustLazyGlobal::new(|| interface::RustRfc::new(FilesystemMetadata::init_fs_metadata())); //we want to check if fs exists before doing a blank init, but not for now
 
-
+/* A.W.: 
+*   [Wait for change]
+*   - EmulatedFile deleted?
+*/
 type FileObjectTable = interface::RustHashMap<usize, interface::EmulatedFile>;
 pub static FILEOBJECTTABLE: interface::RustLazyGlobal<FileObjectTable> = 
     interface::RustLazyGlobal::new(|| interface::RustHashMap::new());
@@ -95,6 +105,10 @@ pub struct DirectoryInode {
 pub struct FilesystemMetadata {
     pub nextinode: interface::RustAtomicUsize,
     pub dev_id: u64,
+    /* A.W.: 
+    *   [Wait for change]
+    *   - Replace Inode with EmulatedFile?
+    */
     pub inodetable: interface::RustHashMap<usize, Inode>
 }
 
@@ -105,6 +119,10 @@ pub fn init_filename_to_inode_dict(curinode: usize, parentinode: usize) -> inter
     retval
 }
 
+/* A.W.: 
+*   [Wait for change]
+*   - Delete the unused lines according to what we want
+*/
 impl FilesystemMetadata {
 
     pub fn blank_fs_init() -> FilesystemMetadata {
@@ -123,19 +141,11 @@ impl FilesystemMetadata {
         retval
     }
 
-    // Read file, and deserialize CBOR to FS METADATA
+    /* A.W.:
+    *   Always initial - because we don't need persistent
+    */
     pub fn init_fs_metadata() -> FilesystemMetadata {
-        // Read CBOR from file
-        if interface::pathexists(METADATAFILENAME.to_string()) {
-            let metadata_fileobj = interface::openfile(METADATAFILENAME.to_string(), false).unwrap();
-            let metadatabytes = metadata_fileobj.readfile_to_new_bytes().unwrap();
-            metadata_fileobj.close().unwrap();
-    
-            // Restore metadata
-            interface::serde_deserialize_from_bytes(&metadatabytes).unwrap()
-        } else {
-            FilesystemMetadata::blank_fs_init()
-        }
+        FilesystemMetadata::blank_fs_init()
     }
 }
 
@@ -219,65 +229,65 @@ pub fn format_fs() {
 
     let _logremove = interface::removefile(LOGFILENAME.to_string());
 
-    persist_metadata(&newmetadata);
+    // persist_metadata(&newmetadata);
 }
 
-pub fn load_fs() {
-    // If the metadata file exists, just close the file for later restore
-    // If it doesn't, lets create a new one, load special files, and persist it.
-    if interface::pathexists(METADATAFILENAME.to_string()) {
-        let metadata_fileobj = interface::openfile(METADATAFILENAME.to_string(), true).unwrap();
-        metadata_fileobj.close().unwrap();
+// pub fn load_fs() {
+//     // If the metadata file exists, just close the file for later restore
+//     // If it doesn't, lets create a new one, load special files, and persist it.
+//     if interface::pathexists(METADATAFILENAME.to_string()) {
+//         let metadata_fileobj = interface::openfile(METADATAFILENAME.to_string(), true).unwrap();
+//         metadata_fileobj.close().unwrap();
 
-        // if we have a log file at this point, we need to sync it with the existing metadata
-        if interface::pathexists(LOGFILENAME.to_string()) {
+//         // if we have a log file at this point, we need to sync it with the existing metadata
+//         if interface::pathexists(LOGFILENAME.to_string()) {
 
-            let log_fileobj = interface::openfile(LOGFILENAME.to_string(), false).unwrap();
-            // read log file and parse count
-            let mut logread = log_fileobj.readfile_to_new_bytes().unwrap();
-            let logsize = interface::convert_bytes_to_size(&logread[0..interface::COUNTMAPSIZE]);
+//             let log_fileobj = interface::openfile(LOGFILENAME.to_string(), false).unwrap();
+//             // read log file and parse count
+//             let mut logread = log_fileobj.readfile_to_new_bytes().unwrap();
+//             let logsize = interface::convert_bytes_to_size(&logread[0..interface::COUNTMAPSIZE]);
 
-            // create vec of log file bounded by indefinite encoding bytes (0x9F, 0xFF)
-            let mut logbytes: Vec<u8> = Vec::new();
-            logbytes.push(0x9F);
-            logbytes.extend_from_slice(&mut logread[interface::COUNTMAPSIZE..(interface::COUNTMAPSIZE + logsize)]);
-            logbytes.push(0xFF);
-            let mut logvec: Vec<(usize, Option<Inode>)> = interface::serde_deserialize_from_bytes(&logbytes).unwrap();
+//             // create vec of log file bounded by indefinite encoding bytes (0x9F, 0xFF)
+//             let mut logbytes: Vec<u8> = Vec::new();
+//             logbytes.push(0x9F);
+//             logbytes.extend_from_slice(&mut logread[interface::COUNTMAPSIZE..(interface::COUNTMAPSIZE + logsize)]);
+//             logbytes.push(0xFF);
+//             let mut logvec: Vec<(usize, Option<Inode>)> = interface::serde_deserialize_from_bytes(&logbytes).unwrap();
 
-            // drain the vector and deserialize into pairs of inodenum + inodes,
-            // if the inode exists, add it, if not, remove it
-            // keep track of the largest inodenum we see so we can update the nextinode counter
-            let mut max_inodenum = FS_METADATA.nextinode.load(interface::RustAtomicOrdering::Relaxed);
-            for serialpair in logvec.drain(..) {
-                let (inodenum, inode) = serialpair;
-                match inode {
-                    Some(inode) => {
-                        max_inodenum = interface::rust_max(max_inodenum, inodenum);
-                        FS_METADATA.inodetable.insert(inodenum, inode);
-                    }
-                    None => {FS_METADATA.inodetable.remove(&inodenum);}
-                }
-            }
+//             // drain the vector and deserialize into pairs of inodenum + inodes,
+//             // if the inode exists, add it, if not, remove it
+//             // keep track of the largest inodenum we see so we can update the nextinode counter
+//             let mut max_inodenum = FS_METADATA.nextinode.load(interface::RustAtomicOrdering::Relaxed);
+//             for serialpair in logvec.drain(..) {
+//                 let (inodenum, inode) = serialpair;
+//                 match inode {
+//                     Some(inode) => {
+//                         max_inodenum = interface::rust_max(max_inodenum, inodenum);
+//                         FS_METADATA.inodetable.insert(inodenum, inode);
+//                     }
+//                     None => {FS_METADATA.inodetable.remove(&inodenum);}
+//                 }
+//             }
 
-            // update the nextinode counter to avoid collisions
-            FS_METADATA.nextinode.store(max_inodenum + 1, interface::RustAtomicOrdering::Relaxed);
+//             // update the nextinode counter to avoid collisions
+//             FS_METADATA.nextinode.store(max_inodenum + 1, interface::RustAtomicOrdering::Relaxed);
 
-            let _logclose = log_fileobj.close();
-            let _logremove = interface::removefile(LOGFILENAME.to_string());
+//             let _logclose = log_fileobj.close();
+//             let _logremove = interface::removefile(LOGFILENAME.to_string());
 
-            // clean up broken links
-            fsck();
-        }
-    } else {
-        if interface::pathexists(LOGFILENAME.to_string()) {
-            println!("Filesystem in very corrupted state: log existed but metadata did not!");
-        }
-        format_fs();
-    }
+//             // clean up broken links
+//             fsck();
+//         }
+//     } else {
+//         if interface::pathexists(LOGFILENAME.to_string()) {
+//             println!("Filesystem in very corrupted state: log existed but metadata did not!");
+//         }
+//         format_fs();
+//     }
 
-    // then recreate the log
-    create_log();
-}
+//     // then recreate the log
+//     create_log();
+// }
 
 pub fn fsck() {
     FS_METADATA.inodetable.retain(|_inodenum, inode_obj| {
@@ -297,46 +307,46 @@ pub fn fsck() {
     });
 }
 
-pub fn create_log() {
-    // reinstantiate the log file and assign it to the metadata struct
-    let log_mapobj = interface::mapfilenew(LOGFILENAME.to_string()).unwrap();
-    let mut logobj = LOGMAP.write();
-    logobj.replace(log_mapobj);
-}
+// pub fn create_log() {
+//     // reinstantiate the log file and assign it to the metadata struct
+//     let log_mapobj = interface::mapfilenew(LOGFILENAME.to_string()).unwrap();
+//     let mut logobj = LOGMAP.write();
+//     logobj.replace(log_mapobj);
+// }
 
-// Serialize New Metadata to CBOR, write to logfile
-pub fn log_metadata(metadata: &FilesystemMetadata, inodenum: usize) {
-    let serialpair: (usize, Option<&Inode>);
-    let entrybytes;
+// // Serialize New Metadata to CBOR, write to logfile
+// pub fn log_metadata(metadata: &FilesystemMetadata, inodenum: usize) {
+//     let serialpair: (usize, Option<&Inode>);
+//     let entrybytes;
 
-    // pack and serialize log entry
-    if let Some(inode) = metadata.inodetable.get(&inodenum) {
-        serialpair = (inodenum, Some(&*inode));
-        entrybytes = interface::serde_serialize_to_bytes(&serialpair).unwrap();
-    } else {
-        serialpair = (inodenum, None);
-        entrybytes = interface::serde_serialize_to_bytes(&serialpair).unwrap();
-    }
+//     // pack and serialize log entry
+//     if let Some(inode) = metadata.inodetable.get(&inodenum) {
+//         serialpair = (inodenum, Some(&*inode));
+//         entrybytes = interface::serde_serialize_to_bytes(&serialpair).unwrap();
+//     } else {
+//         serialpair = (inodenum, None);
+//         entrybytes = interface::serde_serialize_to_bytes(&serialpair).unwrap();
+//     }
 
-    // write to file
-    let mut mapopt = LOGMAP.write();
-    let map = mapopt.as_mut().unwrap();
-    map.write_to_map(&entrybytes).unwrap();
-}
+//     // write to file
+//     let mut mapopt = LOGMAP.write();
+//     let map = mapopt.as_mut().unwrap();
+//     map.write_to_map(&entrybytes).unwrap();
+// }
 
 // Serialize Metadata Struct to CBOR, write to file
-pub fn persist_metadata(metadata: &FilesystemMetadata) {
-    // Serialize metadata to string
-    let metadatabytes = interface::serde_serialize_to_bytes(&metadata).unwrap();
+// pub fn persist_metadata(metadata: &FilesystemMetadata) {
+//     // Serialize metadata to string
+//     let metadatabytes = interface::serde_serialize_to_bytes(&metadata).unwrap();
     
-    // remove file if it exists, assigning it to nothing to avoid the compiler yelling about unused result
-    let _ = interface::removefile(METADATAFILENAME.to_string());
+//     // remove file if it exists, assigning it to nothing to avoid the compiler yelling about unused result
+//     let _ = interface::removefile(METADATAFILENAME.to_string());
 
-    // write to file
-    let mut metadata_fileobj = interface::openfile(METADATAFILENAME.to_string(), true).unwrap();
-    metadata_fileobj.writefile_from_bytes(&metadatabytes).unwrap();
-    metadata_fileobj.close().unwrap();
-}
+//     // write to file
+//     let mut metadata_fileobj = interface::openfile(METADATAFILENAME.to_string(), true).unwrap();
+//     metadata_fileobj.writefile_from_bytes(&metadatabytes).unwrap();
+//     metadata_fileobj.close().unwrap();
+// }
 
 pub fn convpath(cpath: &str) -> interface::RustPathBuf {
     interface::RustPathBuf::from(cpath)
