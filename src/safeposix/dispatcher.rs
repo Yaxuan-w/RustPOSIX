@@ -599,7 +599,7 @@ fn cleartmp(init: bool) {
     let path = "/tmp";
     
     let cage = interface::cagetable_getref(0);
-    let mut statdata = StatData::default();
+    let statdata = StatData::default();
     
     // if cage.stat_syscall(path, &mut statdata) == 0 {
     //     visit_children(&cage, path, None, |childcage, childpath, isdir, _| {
