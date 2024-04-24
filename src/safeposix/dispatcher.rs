@@ -641,7 +641,26 @@ pub extern "C" fn lindgetsighandler(cageid: u64, signo: i32) -> u32 {
 pub extern "C" fn lindrustinit(verbosity: isize) {
     let _ = interface::VERBOSE.set(verbosity); //assigned to suppress unused result warning
     interface::cagetable_init();
+    
+    /* A.W.:
+    *   Add initialization steps
+    */
+    
+    const MB: usize = 1024 * 1024;
+    
+    let mut vec = Vec::with_capacity(MB);
+    unsafe {
+        vec.set_len(MB);
+    }
+    let ptr:*mut u8 = vec.as_mut_ptr();
+    std::mem::forget(vec);
+    
+    let start_address = ptr as usize;
+    if let Ok(mut addr) = interface::GLOBAL_MEMORY.base_address.lock() {
+        *addr = start_address;
+    }
 
+    let buffer = vec![0u8; 5*MB];
     
     // load_fs();
     incref_root();
