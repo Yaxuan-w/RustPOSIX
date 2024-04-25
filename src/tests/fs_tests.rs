@@ -22,15 +22,9 @@ pub mod fs_tests {
         // ut_lind_fs_fcntl();
         // ut_lind_fs_ioctl();
         // ut_lind_fs_fdflags();
-        /* --- */
-        // ut_lind_fs_file_link_unlink();
-        /* Pass */
         // ut_lind_fs_file_lseek_past_end();
         // ut_lind_fs_fstat_complex();
         // ut_lind_fs_getuid();
-        /* --- */
-        // ut_lind_fs_load_fs();
-        /* Pass */
         // ut_lind_fs_mknod();
         // ut_lind_fs_rename();
         // ut_lind_fs_rmdir();
@@ -47,18 +41,18 @@ pub mod fs_tests {
         // chardevtest();
         /* --- */
         // ut_lind_fs_multiple_open();
-        
-        
-        
+        // ut_lind_fs_load_fs();
+        // ut_lind_fs_file_link_unlink();
+        // ut_lind_fs_exec_cloexec();
         
         /* --- */
-        ut_lind_fs_exec_cloexec();
+        
         // ut_lind_fs_shm();
         // ut_lind_fs_getpid_getppid();
         // ut_lind_fs_sem_fork();
         // ut_lind_fs_sem_trytimed();
         // ut_lind_fs_sem_test();
-        // ut_lind_fs_tmp_file_test();
+        ut_lind_fs_tmp_file_test();
     }
 
 
