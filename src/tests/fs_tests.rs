@@ -47,18 +47,13 @@ pub mod fs_tests {
         ut_lind_fs_sem_test();
         ut_lind_fs_sem_fork();
         ut_lind_fs_shm();
-
-        /* --- */
-        /* A.W.:
-        *   related to /tmp file?? need to consider more conditions 
-        */
         ut_lind_fs_tmp_file_test();
 
+        /* --- */
         /* A.W.:
         *   loading phase
         */
         // ut_lind_fs_load_fs();
-
         /* --- */
     }
 
