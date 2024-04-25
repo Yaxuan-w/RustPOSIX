@@ -43,10 +43,11 @@ pub mod fs_tests {
         ut_lind_fs_exec_cloexec();
         ut_lind_fs_file_link_unlink();
         ut_lind_fs_getpid_getppid();
-        
         ut_lind_fs_sem_trytimed();
         ut_lind_fs_sem_test();
+        ut_lind_fs_sem_fork();
         ut_lind_fs_shm();
+
         /* --- */
         /* A.W.:
         *   related to /tmp file?? need to consider more conditions 
@@ -58,7 +59,6 @@ pub mod fs_tests {
         */
         // ut_lind_fs_load_fs();
 
-        ut_lind_fs_sem_fork();
         /* --- */
     }
 
