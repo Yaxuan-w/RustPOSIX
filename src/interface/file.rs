@@ -46,21 +46,21 @@ pub fn listfiles() -> Vec<String> {
     return names;
 }
 
-pub fn removefile(filename: String) -> std::io::Result<()> {
-    let openfiles = &OPEN_FILES;
+// pub fn removefile(filename: String) -> std::io::Result<()> {
+//     let openfiles = &OPEN_FILES;
 
-    if openfiles.contains(&filename) {
-        panic!("FileInUse");
-    }
+//     if openfiles.contains(&filename) {
+//         panic!("FileInUse");
+//     }
 
-    let path: RustPathBuf = [".".to_string(), filename].iter().collect();
+//     let path: RustPathBuf = [".".to_string(), filename].iter().collect();
 
-    let absolute_filename = canonicalize(&path)?; //will return an error if the file does not exist
+//     let absolute_filename = canonicalize(&path)?; //will return an error if the file does not exist
 
-    fs::remove_file(absolute_filename)?;
+//     fs::remove_file(absolute_filename)?;
 
-    Ok(())
-}
+//     Ok(())
+// }
 fn is_allowed_char(c: char) -> bool{
     char::is_alphanumeric(c) || c == '.'
 }

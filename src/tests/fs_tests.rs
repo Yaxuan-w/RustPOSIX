@@ -39,9 +39,9 @@ pub mod fs_tests {
         // rdwrtest();
         // prdwrtest();
         // chardevtest();
-        // ut_lind_fs_multiple_open();
+        ut_lind_fs_multiple_open();
         // ut_lind_fs_file_link_unlink();
-        
+
         /* --- */
 
         /* A.W.:

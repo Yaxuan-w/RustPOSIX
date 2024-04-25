@@ -227,7 +227,7 @@ pub fn format_fs() {
     newmetadata.inodetable.insert(6, randominode);
     newmetadata.inodetable.insert(7, tmpdirinode); 
 
-    let _logremove = interface::removefile(LOGFILENAME.to_string());
+    // let _logremove = interface::removefile(LOGFILENAME.to_string());
 
     // persist_metadata(&newmetadata);
 }
