@@ -738,6 +738,7 @@ pub mod fs_tests {
         let fd1 = cage.open_syscall("/foo", O_CREAT | O_EXCL | O_RDWR, S_IRWXA);
         let fd2 = cage.open_syscall("/foo", O_RDWR, S_IRWXA);
         assert_ne!(fd1, fd2);
+        panic!("");
 
         let flags: i32 = O_TRUNC | O_CREAT | O_RDWR;
         let mode: u32 = 0o666;   // 0666
