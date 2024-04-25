@@ -49,7 +49,7 @@ pub mod fs_tests {
         */
         
         
-        // ut_lind_fs_multiple_open();
+        ut_lind_fs_multiple_open();
         ut_lind_fs_exec_cloexec();
 
         /* A.W.:
