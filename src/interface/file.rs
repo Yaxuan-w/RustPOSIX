@@ -230,7 +230,10 @@ impl EmulatedFile {
                         ptr = ptr.add(bytes_to_copy);
                     }
 
-                    if remain_len == 0 || length - remain_len == self.filesize {
+                    if length - remain_len == self.filesize {
+                        break;
+                    }
+                    if remain_len == 0 {
                         break;
                     }
                 }
