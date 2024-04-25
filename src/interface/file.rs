@@ -246,7 +246,6 @@ impl EmulatedFile {
         }
         
         Ok(len - remain_len)
-        // Ok(remain_len)
 
     }
 

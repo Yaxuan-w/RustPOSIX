@@ -24,9 +24,11 @@ pub mod fs_tests {
         // ut_lind_fs_fdflags();
         /* --- */
         // ut_lind_fs_file_link_unlink();
-        ut_lind_fs_file_lseek_past_end();
-        // ut_lind_fs_fstat_complex();
-        // ut_lind_fs_getuid();
+        /* Pass */
+        // ut_lind_fs_file_lseek_past_end();
+        /* --- */
+        ut_lind_fs_fstat_complex();
+        ut_lind_fs_getuid();
         // ut_lind_fs_load_fs();
         // ut_lind_fs_mknod();
         // ut_lind_fs_multiple_open();
