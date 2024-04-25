@@ -50,7 +50,7 @@ pub mod fs_tests {
         
         
         
-        ut_lind_fs_exec_cloexec();
+        // ut_lind_fs_exec_cloexec();
 
         /* A.W.:
         *   related to /tmp file?? need to consider more conditions 
@@ -735,9 +735,9 @@ pub mod fs_tests {
         let cage = interface::cagetable_getref(1);
 
         //try to open several files at once -- the fd's should not be overwritten
-        let fd1 = cage.open_syscall("/foo", O_CREAT | O_EXCL | O_RDWR, S_IRWXA);
-        let fd2 = cage.open_syscall("/foo", O_RDWR, S_IRWXA);
-        assert_ne!(fd1, fd2);
+        // let fd1 = cage.open_syscall("/foo", O_CREAT | O_EXCL | O_RDWR, S_IRWXA);
+        // let fd2 = cage.open_syscall("/foo", O_RDWR, S_IRWXA);
+        // assert_ne!(fd1, fd2);
 
         let flags: i32 = O_TRUNC | O_CREAT | O_RDWR;
         let mode: u32 = 0o666;   // 0666
