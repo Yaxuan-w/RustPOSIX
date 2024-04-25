@@ -104,16 +104,17 @@ impl Cage {
                             }
                             // resize it to 0
                             f.size = 0;
-                            //remove the previous file and add a new one of 0 length
-                            if let interface::RustHashEntry::Occupied(occ) = entry {
-                                occ.remove_entry();
-                            }
-                            
                             /* A.W.: 
                             *   Replace with IMFS 
                             */
                             let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
                             let _ = emulatedfile.shrink(0);
+                            //remove the previous file and add a new one of 0 length
+                            if let interface::RustHashEntry::Occupied(occ) = entry {
+                                occ.remove_entry();
+                            }
+                            
+                            
                             // let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
                             // interface::removefile(sysfilename.clone()).unwrap();
                         }
