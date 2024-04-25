@@ -38,21 +38,21 @@ pub mod fs_tests {
         // ut_lind_fs_stat_file_mode();
         // ut_lind_fs_statfs();
         // ut_lind_fs_fstatfs();
+        // ut_lind_fs_ftruncate();
+        // ut_lind_fs_truncate();
+        // ut_lind_fs_getdents();
+        // ut_lind_fs_dir_chdir_getcwd();
+        // rdwrtest();
+        // prdwrtest();
+        // chardevtest();
         /* --- */
         // ut_lind_fs_multiple_open();
         
         
         
-        ut_lind_fs_ftruncate();
-        ut_lind_fs_truncate();
-        ut_lind_fs_getdents();
-        ut_lind_fs_dir_chdir_getcwd();
-        /* Pass */
-        // rdwrtest();
-        // prdwrtest();
-        // chardevtest();
+        
         /* --- */
-        // ut_lind_fs_exec_cloexec();
+        ut_lind_fs_exec_cloexec();
         // ut_lind_fs_shm();
         // ut_lind_fs_getpid_getppid();
         // ut_lind_fs_sem_fork();
