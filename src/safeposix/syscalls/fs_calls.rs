@@ -96,7 +96,7 @@ impl Cage {
                 match *inodeobj {
                     Inode::File(ref mut f) => {
                         if O_TRUNC == (flags & O_TRUNC) {
-                        // We only do this to regular files, otherwise O_TRUNC is undefined
+                            // We only do this to regular files, otherwise O_TRUNC is undefined
                             //close the file object if another cage has it open
                             let entry = FILEOBJECTTABLE.entry(inodenum);
                             if let interface::RustHashEntry::Occupied(occ) = &entry {
@@ -104,14 +104,18 @@ impl Cage {
                             }
                             // resize it to 0
                             f.size = 0;
-    
                             //remove the previous file and add a new one of 0 length
                             if let interface::RustHashEntry::Occupied(occ) = entry {
                                 occ.remove_entry();
                             }
-    
-                            let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
-                            interface::removefile(sysfilename.clone()).unwrap();
+                            
+                            /* A.W.: 
+                            *   Replace with IMFS 
+                            */
+                            let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
+                            let _ = emulatedfile.shrink(0);
+                            // let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
+                            // interface::removefile(sysfilename.clone()).unwrap();
                         }
                         
                         if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(inodenum){
