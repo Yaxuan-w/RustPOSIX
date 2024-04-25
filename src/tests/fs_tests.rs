@@ -40,7 +40,8 @@ pub mod fs_tests {
         // prdwrtest();
         // chardevtest();
         // ut_lind_fs_multiple_open();
-
+        // ut_lind_fs_file_link_unlink();
+        
         /* --- */
 
         /* A.W.:
@@ -48,7 +49,7 @@ pub mod fs_tests {
         */
         
         
-        // ut_lind_fs_file_link_unlink();
+        
         ut_lind_fs_exec_cloexec();
 
         /* A.W.:

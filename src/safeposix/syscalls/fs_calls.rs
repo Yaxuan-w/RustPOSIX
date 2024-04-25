@@ -110,9 +110,9 @@ impl Cage {
                             let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
                             let _ = emulatedfile.shrink(0);
                             //remove the previous file and add a new one of 0 length
-                            // if let interface::RustHashEntry::Occupied(occ) = entry {
-                            //     occ.remove_entry();
-                            // }
+                            if let interface::RustHashEntry::Occupied(occ) = entry {
+                                occ.remove_entry();
+                            }
                             
                             
                             // let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
