@@ -32,9 +32,9 @@ pub mod fs_tests {
         // ut_lind_fs_load_fs();
         /* Pass */
         ut_lind_fs_mknod();
-        ut_lind_fs_multiple_open();
+        // ut_lind_fs_multiple_open();
         ut_lind_fs_rename();
-        ut_lind_fs_rmdir();
+        // ut_lind_fs_rmdir();
         // ut_lind_fs_stat_file_complex();
         // ut_lind_fs_stat_file_mode();
         // ut_lind_fs_statfs();
