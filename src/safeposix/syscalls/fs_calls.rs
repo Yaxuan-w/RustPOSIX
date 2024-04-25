@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 // File system related system calls
-use crate::interface;
+use crate::interface::{self, EmulatedFile};
 use crate::safeposix::cage::{*, FileDescriptor::*};
 use crate::safeposix::filesystem::*;
 use crate::safeposix::net::{NET_METADATA};
@@ -348,7 +348,7 @@ impl Cage {
             (Some(inodenum), Some(parentinodenum)) => {
                 let mut inodeobj = FS_METADATA.inodetable.get_mut(&inodenum).unwrap();
 
-                let (currefcount, curlinkcount, has_fobj, _log) = match *inodeobj {
+                let (currefcount, curlinkcount, _has_fobj, _log) = match *inodeobj {
                     Inode::File(ref mut f) => {f.linkcount -= 1; (f.refcount, f.linkcount, true, true)},
                     Inode::CharDev(ref mut f) => {f.linkcount -= 1; (f.refcount, f.linkcount, false, true)},
                     Inode::Socket(ref mut f) => {f.linkcount -= 1; (f.refcount, f.linkcount, false, false)},
@@ -362,6 +362,9 @@ impl Cage {
 
                 if curlinkcount == 0 {
                     if currefcount == 0  {
+                        /* A.W.:
+                        *   Replace with IMFS 
+                        */
                         let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
                         let _ = emulatedfile.shrink(0);
                         //actually remove file and the handle to it
@@ -1316,10 +1319,15 @@ impl Cage {
                                 FILEOBJECTTABLE.remove(&inodenum).unwrap().1.close().unwrap();
                                 if normalfile_inode_obj.linkcount == 0 {
                                     drop(inodeobj);
+                                    /* A.W.:
+                                    *   Replace with IMFS 
+                                    */
+                                    let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
+                                    let _ = emulatedfile.shrink(0);
                                     //removing the file from the entire filesystem (interface, metadata, and object table)
                                     FS_METADATA.inodetable.remove(&inodenum);
-                                    let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
-                                    interface::removefile(sysfilename).unwrap();
+                                    // let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
+                                    // interface::removefile(sysfilename).unwrap();
                                 } else {
                                     drop(inodeobj);
                                 }
