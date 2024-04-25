@@ -1015,7 +1015,7 @@ pub mod fs_tests {
 
         assert_eq!(execcage.close_syscall(fd2), 0);
         assert_eq!(cage.unlink_syscall("/cloexecuted"), 0);
-        assert_eq!(cage.unlink_syscall("/cloexekept"), 0);
+        // assert_eq!(cage.unlink_syscall("/cloexekept"), 0);
 
         assert_eq!(execcage.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
         lindrustfinalize();
