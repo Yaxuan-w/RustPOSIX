@@ -6,12 +6,12 @@
 use parking_lot::Mutex;
 use std::sync::Arc;
 use dashmap::DashSet;
-use std::fs::{self, File, OpenOptions, canonicalize};
+pub use std::fs::{self, File, OpenOptions, canonicalize};
 use std::env;
 use std::slice;
 pub use std::path::{PathBuf as RustPathBuf, Path as RustPath, Component as RustPathComponent};
 pub use std::ffi::CStr as RustCStr;
-use std::io::{SeekFrom, Seek, Read, Write};
+pub use std::io::{SeekFrom, Seek, Read, Write, BufReader, BufWriter, Result};
 pub use std::sync::{LazyLock as RustLazyGlobal, Mutex as RustMutex};
 use std::ptr::copy;
 
@@ -21,15 +21,10 @@ use std::ffi::c_void;
 use std::convert::TryInto;
 use crate::interface::errnos::{Errno, syscall_error};
 
-/* A.W.: 
-*   [Wait to ADD]
-*   - Recovering all updates of OPEN_FILES
-*/
+
 static OPEN_FILES: RustLazyGlobal<Arc<DashSet<String>>> = RustLazyGlobal::new(|| Arc::new(DashSet::new()));
 
-pub fn openfile(filename: String) -> std::io::Result<EmulatedFile> {
-    EmulatedFile::new(filename)
-}
+
 
 pub fn listfiles() -> Vec<String> {
     let paths = fs::read_dir(&RustPath::new(
@@ -96,10 +91,6 @@ pub struct Memory {
     pub memory_list: RustMutex<Vec<usize>>,
 }
 
-/* A.W.:
-*   [Wait to do]
-*   Remove this func to the lindrustinit() func
-*/
 // We want to Memory to be a global variable 
 pub static GLOBAL_MEMORY: RustLazyGlobal<Memory> = RustLazyGlobal::new(|| {
     let page_size = 4096;
@@ -162,6 +153,10 @@ pub struct EmulatedFile {
     pub filesize: usize,
     pub memory_block: Vec<usize>,
     pub filename: String,
+}
+
+pub fn openfile(filename: String) -> std::io::Result<EmulatedFile> {
+    EmulatedFile::new(filename)
 }
 
 impl EmulatedFile {

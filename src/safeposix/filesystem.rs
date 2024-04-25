@@ -6,7 +6,9 @@ use super::syscalls::fs_constants::*;
 use super::syscalls::sys_constants::*;
 use super::net::NET_METADATA;
 
-use super::cage::Cage;
+use super::cage::{Cage, FileDesc, FileDescriptor};
+
+use std::io::BufRead;
 
 pub const METADATAFILENAME: &str = "lind.metadata";
 
@@ -20,17 +22,9 @@ pub const LOGFILENAME: &str = "lind.md.log";
 //         interface::RustRfc::new(interface::RustLock::new(None))
 // );
 
-/* A.W.: 
-*   [Wait for change]
-*   - Change in init_fs_metadata
-*/
 pub static FS_METADATA: interface::RustLazyGlobal<interface::RustRfc<FilesystemMetadata>> = 
     interface::RustLazyGlobal::new(|| interface::RustRfc::new(FilesystemMetadata::init_fs_metadata())); //we want to check if fs exists before doing a blank init, but not for now
 
-/* A.W.: 
-*   [Wait for change]
-*   - EmulatedFile deleted?
-*/
 type FileObjectTable = interface::RustHashMap<usize, interface::EmulatedFile>;
 pub static FILEOBJECTTABLE: interface::RustLazyGlobal<FileObjectTable> = 
     interface::RustLazyGlobal::new(|| interface::RustHashMap::new());
@@ -120,8 +114,7 @@ pub fn init_filename_to_inode_dict(curinode: usize, parentinode: usize) -> inter
 }
 
 /* A.W.: 
-*   [Wait for change]
-*   - Delete the unused lines according to what we want
+*   Changes to remove usage of log-based fs
 */
 impl FilesystemMetadata {
 
@@ -232,17 +225,116 @@ pub fn format_fs() {
     // persist_metadata(&newmetadata);
 }
 
+/* A.W.:
+*   [Want to re-implement load_fs() for IMFS] 
+*/
+pub fn load_fs(input_path: &str, cage: &Cage) -> std::io::Result<()> {
+    /* 
+    *   Loading File is consisted by two parts: (filename filesize filepath;filename2 filesize2 filepath2;...)"not whitespace between size
+    *   and next filename" followed by contents
+    *   [NEED TO CONSIDER]
+    *   - Pass in filepath and form file tree
+    *
+    *   Consider using open_syscall() for reference, because we need to handle path
+    *   1. Get the file list with their size
+    *   2. Read from local file into EmulatedFile
+    *   3. Hook EmulatedFile with Inode 
+    */
+    // 1
+    // Open the loading file
+    let file = interface::File::open(input_path)?;
+    let mut reader = interface::BufReader::new(file);
+    // Read file information entries (Read all bytes until a newline (the 0xA byte) is reached )
+    let mut lines = String::new();
+    let _ = reader.read_line(&mut lines);
+    // 2
+    // Divide the file information into individual entries
+    let mut file_entries = Vec::new();
+    let entries = lines.split(';');
+    for entry in entries {
+        // Format: filename filesize filepath
+        let parts: Vec<_> = entry.trim().split_whitespace().collect();
+        if parts.len() == 3 {
+            let filename = parts[0].to_string();
+            let filesize = parts[1].parse::<usize>();
+            let filepath = parts[2];
+            if let Ok(filesize) = filesize {
+                file_entries.push((filename, filesize, filepath));
+            } else {
+                eprintln!("Error parsing size for entry: {}", entry);
+            }
+        }
+    }
+    
+    // Read contents into EmulatedFile according to file information entry
+    for (filename, filesize, filepath) in file_entries {
+        let mut content = Vec::new();
+        reader.read_until(filesize as u8, &mut content);
+
+        // Create a new emulated file and write the contents
+        let mut emulated_file = interface::openfile(filename.clone()).unwrap();
+        let _ = emulated_file.writefile_from_bytes(&content);
+        // Add to metadata
+        let truepath = normpath(convpath(filepath), cage);
+        if filepath.len() == 0 { panic!("No path in loading phase"); }
+        let (fd, guardopt) = cage.get_next_fd(None);
+        if fd < 0 { panic!("Cannot get fd table in loading phase"); }
+        let fdoption = &mut *guardopt.unwrap();
+        let flags = O_RDWR | O_CREAT | O_APPEND;
+        match metawalkandparent(truepath.as_path()) {
+            (None, None) => {
+                panic!("Cannot create files in loading phase");
+            }
+            (None, Some(pardirinode)) => {
+                let mode = 0o777;
+                let effective_mode = S_IFREG as u32 | mode;
+                let time = interface::timestamp(); //We do a real timestamp now
+                let newinode = Inode::File(GenericInode {
+                    size: 0, uid: DEFAULT_UID, gid: DEFAULT_GID,
+                    mode: effective_mode, linkcount: 1, refcount: 1,
+                    atime: time, ctime: time, mtime: time,
+                });
+                let newinodenum = FS_METADATA.nextinode.fetch_add(1, interface::RustAtomicOrdering::Relaxed); //fetch_add returns the previous value, which is the inode number we want
+                if let Inode::Dir(ref mut ind) = *(FS_METADATA.inodetable.get_mut(&pardirinode).unwrap()) {
+                    ind.filename_to_inode_dict.insert(filename.clone(), newinodenum);
+                    ind.linkcount += 1;
+                    //insert a reference to the file in the parent directory
+                } else {
+                    panic!("It's a dictionary in loading phase");
+                }
+                FS_METADATA.inodetable.insert(newinodenum, newinode);
+                if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
+                    let sysfilename = format!("{}{}", FILEDATAPREFIX, newinodenum);
+                    vac.insert(interface::openfile(sysfilename).unwrap());
+                }
+                let position = if 0 != flags & O_APPEND {filesize} else {0};
+                let allowmask = O_RDWRFLAGS | O_CLOEXEC;
+                let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
+                let _insertval = fdoption.insert(FileDescriptor::File(newfd));
+            }
+            (Some(_inodenum), ..) => {
+                panic!("File {inodenum} already exists in loading phasae");
+            }
+        }
+        
+        
+        // Add to fdtable
+    }
+    // 3
+    Ok(())
+    
+}
 // pub fn load_fs() {
 //     // If the metadata file exists, just close the file for later restore
 //     // If it doesn't, lets create a new one, load special files, and persist it.
 //     if interface::pathexists(METADATAFILENAME.to_string()) {
-//         let metadata_fileobj = interface::openfile(METADATAFILENAME.to_string(), true).unwrap();
+//         let metadata_fileobj = interface::openfile(METADATAFILENAME.to_string()).unwrap();
 //         metadata_fileobj.close().unwrap();
 
 //         // if we have a log file at this point, we need to sync it with the existing metadata
 //         if interface::pathexists(LOGFILENAME.to_string()) {
 
-//             let log_fileobj = interface::openfile(LOGFILENAME.to_string(), false).unwrap();
+//             let log_fileobj = interface::openfile(LOGFILENAME.to_string()).unwrap();
 //             // read log file and parse count
 //             let mut logread = log_fileobj.readfile_to_new_bytes().unwrap();
 //             let logsize = interface::convert_bytes_to_size(&logread[0..interface::COUNTMAPSIZE]);
@@ -279,14 +371,14 @@ pub fn format_fs() {
 //             fsck();
 //         }
 //     } else {
-//         if interface::pathexists(LOGFILENAME.to_string()) {
-//             println!("Filesystem in very corrupted state: log existed but metadata did not!");
-//         }
+//         // if interface::pathexists(LOGFILENAME.to_string()) {
+//         //     println!("Filesystem in very corrupted state: log existed but metadata did not!");
+//         // }
 //         format_fs();
 //     }
 
 //     // then recreate the log
-//     create_log();
+//     // create_log();
 // }
 
 pub fn fsck() {
