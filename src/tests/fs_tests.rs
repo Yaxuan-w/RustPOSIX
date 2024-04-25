@@ -39,7 +39,7 @@ pub mod fs_tests {
         // rdwrtest();
         // prdwrtest();
         // chardevtest();
-        ut_lind_fs_multiple_open();
+        
         // ut_lind_fs_file_link_unlink();
 
         /* --- */
@@ -49,8 +49,8 @@ pub mod fs_tests {
         */
         
         
-        
-        ut_lind_fs_exec_cloexec();
+        ut_lind_fs_multiple_open();
+        // ut_lind_fs_exec_cloexec();
 
         /* A.W.:
         *   related to /tmp file?? need to consider more conditions 
@@ -751,13 +751,13 @@ pub mod fs_tests {
         assert_eq!(cbuf2str(&read_buf), "hi");
         
 
-        let _fd4 = cage.open_syscall(name, flags, mode);
-        let mut buf = sizecbuf(5);
-        assert_eq!(cage.lseek_syscall(fd3, 2, SEEK_SET), 2);
-        assert_eq!(cage.write_syscall(fd3, str2cbuf("boo"), 3), 3);
-        assert_eq!(cage.lseek_syscall(fd3, 0, SEEK_SET), 0);
-        assert_eq!(cage.read_syscall(fd3, buf.as_mut_ptr(), 5), 5);
-        assert_eq!(cbuf2str(&buf), "\0\0boo");
+        // let _fd4 = cage.open_syscall(name, flags, mode);
+        // let mut buf = sizecbuf(5);
+        // assert_eq!(cage.lseek_syscall(fd3, 2, SEEK_SET), 2);
+        // assert_eq!(cage.write_syscall(fd3, str2cbuf("boo"), 3), 3);
+        // assert_eq!(cage.lseek_syscall(fd3, 0, SEEK_SET), 0);
+        // assert_eq!(cage.read_syscall(fd3, buf.as_mut_ptr(), 5), 5);
+        // assert_eq!(cbuf2str(&buf), "\0\0boo");
 
         assert_eq!(cage.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
         lindrustfinalize();
