@@ -119,7 +119,7 @@ use super::shm::{SHM_METADATA};
 use super::net::{NET_METADATA};
 use crate::interface::errnos::*;
 use super::syscalls::{sys_constants::*, fs_constants::IPC_STAT};
-// use crate::lib_fs_utils::{visit_children, lind_deltree};
+use crate::lib_fs_utils::{visit_children, lind_deltree};
 
 macro_rules! get_onearg {
     ($arg: expr) => {
@@ -599,19 +599,19 @@ fn cleartmp(init: bool) {
     let path = "/tmp";
     
     let cage = interface::cagetable_getref(0);
-    let statdata = StatData::default();
+    let mut statdata = StatData::default();
     
-    // if cage.stat_syscall(path, &mut statdata) == 0 {
-    //     visit_children(&cage, path, None, |childcage, childpath, isdir, _| {
-    //         if isdir { lind_deltree(childcage, childpath); }
-    //         else { childcage.unlink_syscall(childpath);}
-    //     });
-    // }
-    // else {
-    //     if init  == true {
-    //         cage.mkdir_syscall(path, S_IRWXA);
-    //     } 
-    // }
+    if cage.stat_syscall(path, &mut statdata) == 0 {
+        visit_children(&cage, path, None, |childcage, childpath, isdir, _| {
+            if isdir { lind_deltree(childcage, childpath); }
+            else { childcage.unlink_syscall(childpath);}
+        });
+    }
+    else {
+        if init  == true {
+            cage.mkdir_syscall(path, S_IRWXA);
+        } 
+    }
 }
 
 #[no_mangle]
