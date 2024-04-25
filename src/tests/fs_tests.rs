@@ -33,14 +33,15 @@ pub mod fs_tests {
         /* Pass */
         // ut_lind_fs_mknod();
         // ut_lind_fs_rename();
+        // ut_lind_fs_rmdir();
         /* --- */
         // ut_lind_fs_multiple_open();
         
-        ut_lind_fs_rmdir();
-        // ut_lind_fs_stat_file_complex();
-        // ut_lind_fs_stat_file_mode();
-        // ut_lind_fs_statfs();
-        // ut_lind_fs_fstatfs();
+        
+        ut_lind_fs_stat_file_complex();
+        ut_lind_fs_stat_file_mode();
+        ut_lind_fs_statfs();
+        ut_lind_fs_fstatfs();
         // ut_lind_fs_ftruncate();
         // ut_lind_fs_truncate();
         // ut_lind_fs_getdents();
