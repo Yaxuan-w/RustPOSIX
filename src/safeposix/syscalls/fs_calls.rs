@@ -348,7 +348,7 @@ impl Cage {
             (Some(inodenum), Some(parentinodenum)) => {
                 let mut inodeobj = FS_METADATA.inodetable.get_mut(&inodenum).unwrap();
 
-                let (currefcount, curlinkcount, _has_fobj, _log) = match *inodeobj {
+                let (currefcount, curlinkcount, has_fobj, _log) = match *inodeobj {
                     Inode::File(ref mut f) => {f.linkcount -= 1; (f.refcount, f.linkcount, true, true)},
                     Inode::CharDev(ref mut f) => {f.linkcount -= 1; (f.refcount, f.linkcount, false, true)},
                     Inode::Socket(ref mut f) => {f.linkcount -= 1; (f.refcount, f.linkcount, false, false)},
@@ -365,8 +365,10 @@ impl Cage {
                         /* A.W.:
                         *   Replace with IMFS 
                         */
-                        let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
-                        let _ = emulatedfile.shrink(0);
+                        if has_fobj {
+                            let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
+                            let _ = emulatedfile.shrink(0);
+                        }
                         //actually remove file and the handle to it
                         FS_METADATA.inodetable.remove(&inodenum);
                         // if has_fobj {
