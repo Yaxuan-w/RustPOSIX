@@ -16,12 +16,12 @@ pub mod fs_tests {
         ut_lind_fs_fchmod();
         ut_lind_fs_dir_chdir();
         ut_lind_fs_dir_mode();
-        // ut_lind_fs_dir_multiple();
-        // ut_lind_fs_dup();
-        // ut_lind_fs_dup2();
-        // ut_lind_fs_fcntl();
-        // ut_lind_fs_ioctl();
-        // ut_lind_fs_fdflags();
+        ut_lind_fs_dir_multiple();
+        ut_lind_fs_dup();
+        ut_lind_fs_dup2();
+        ut_lind_fs_fcntl();
+        ut_lind_fs_ioctl();
+        ut_lind_fs_fdflags();
         // ut_lind_fs_file_link_unlink();
         // ut_lind_fs_file_lseek_past_end();
         // ut_lind_fs_fstat_complex();
