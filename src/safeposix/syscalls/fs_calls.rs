@@ -99,10 +99,10 @@ impl Cage {
                             // We only do this to regular files, otherwise O_TRUNC is undefined
                             //close the file object if another cage has it open
                             let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
-                            let entry = FILEOBJECTTABLE.entry(inodenum);
-                            if let interface::RustHashEntry::Occupied(occ) = &entry {
-                                occ.get().close().unwrap();
-                            }
+                            // let entry = FILEOBJECTTABLE.entry(inodenum);
+                            // if let interface::RustHashEntry::Occupied(occ) = &entry {
+                            //     occ.get().close().unwrap();
+                            // }
                             // resize it to 0
                             f.size = 0;
                             /* A.W.: 
@@ -110,9 +110,9 @@ impl Cage {
                             */
                             
                             //remove the previous file and add a new one of 0 length
-                            if let interface::RustHashEntry::Occupied(occ) = entry {
-                                occ.remove_entry();
-                            }
+                            // if let interface::RustHashEntry::Occupied(occ) = entry {
+                            //     occ.remove_entry();
+                            // }
                             
                             
                             let _ = emulatedfile.shrink(0);

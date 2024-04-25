@@ -50,7 +50,7 @@ pub mod fs_tests {
         
         
         
-        // ut_lind_fs_exec_cloexec();
+        ut_lind_fs_exec_cloexec();
 
         /* A.W.:
         *   related to /tmp file?? need to consider more conditions 
