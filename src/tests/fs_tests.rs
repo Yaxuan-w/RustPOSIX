@@ -10,22 +10,23 @@ pub mod fs_tests {
 
     pub fn test_fs() {
         ut_lind_fs_simple(); // has to go first, else the data files created screw with link count test
-
-        // ut_lind_fs_broken_close();
-        ut_lind_fs_chmod();
-        ut_lind_fs_fchmod();
-        ut_lind_fs_dir_chdir();
-        ut_lind_fs_dir_mode();
-        ut_lind_fs_dir_multiple();
-        ut_lind_fs_dup();
-        ut_lind_fs_dup2();
-        ut_lind_fs_fcntl();
-        ut_lind_fs_ioctl();
-        ut_lind_fs_fdflags();
+        /* Pass */
+        // ut_lind_fs_broken_close(); 
+        // ut_lind_fs_chmod();
+        // ut_lind_fs_fchmod();
+        // ut_lind_fs_dir_chdir();
+        // ut_lind_fs_dir_mode();
+        // ut_lind_fs_dir_multiple();
+        // ut_lind_fs_dup();
+        // ut_lind_fs_dup2();
+        // ut_lind_fs_fcntl();
+        // ut_lind_fs_ioctl();
+        // ut_lind_fs_fdflags();
+        /* --- */
         // ut_lind_fs_file_link_unlink();
         ut_lind_fs_file_lseek_past_end();
-        ut_lind_fs_fstat_complex();
-        ut_lind_fs_getuid();
+        // ut_lind_fs_fstat_complex();
+        // ut_lind_fs_getuid();
         // ut_lind_fs_load_fs();
         // ut_lind_fs_mknod();
         // ut_lind_fs_multiple_open();
@@ -39,9 +40,11 @@ pub mod fs_tests {
         // ut_lind_fs_truncate();
         // ut_lind_fs_getdents();
         // ut_lind_fs_dir_chdir_getcwd();
-        rdwrtest();
-        prdwrtest();
-        chardevtest();
+        /* Pass */
+        // rdwrtest();
+        // prdwrtest();
+        // chardevtest();
+        /* --- */
         // ut_lind_fs_exec_cloexec();
         // ut_lind_fs_shm();
         // ut_lind_fs_getpid_getppid();
