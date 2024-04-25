@@ -196,6 +196,11 @@ impl EmulatedFile {
             slice::from_raw_parts_mut(ptr, length)
         };
 
+        // Check for the maxium readable bytes
+        let len; 
+        if length > self.filesize - offset { len = self.filesize - offset; }
+        else { len = length; }
+
         if offset > self.filesize {
             panic!("Seek offset extends past the EOF!");
         }
@@ -207,7 +212,7 @@ impl EmulatedFile {
         } else {
             (offset / page_size, offset % page_size)
         };
-        let mut remain_len = length;
+        let mut remain_len = len;
         for (i, &index) in self.memory_block.iter().enumerate() {
             if i < offset_block {
                 // Skip blocks before starting
@@ -230,9 +235,6 @@ impl EmulatedFile {
                         ptr = ptr.add(bytes_to_copy);
                     }
 
-                    if length - remain_len == self.filesize {
-                        break;
-                    }
                     if remain_len == 0 {
                         break;
                     }
@@ -243,8 +245,8 @@ impl EmulatedFile {
             }
         }
         
-        // Ok(length - remain_len)
-        Ok(remain_len)
+        Ok(len - remain_len)
+        // Ok(remain_len)
 
     }
 
