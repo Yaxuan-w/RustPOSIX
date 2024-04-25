@@ -362,13 +362,14 @@ impl Cage {
 
                 if curlinkcount == 0 {
                     if currefcount == 0  {
-
+                        let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
+                        let _ = emulatedfile.shrink(0);
                         //actually remove file and the handle to it
                         FS_METADATA.inodetable.remove(&inodenum);
-                        if has_fobj {
-                            let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
-                            interface::removefile(sysfilename).unwrap();
-                        }
+                        // if has_fobj {
+                        //     let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
+                        //     interface::removefile(sysfilename).unwrap();
+                        // }
 
                     } //we don't need a separate unlinked flag, we can just check that refcount is 0
                 }

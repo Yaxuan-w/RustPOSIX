@@ -39,21 +39,27 @@ pub mod fs_tests {
         // rdwrtest();
         // prdwrtest();
         // chardevtest();
+        // ut_lind_fs_multiple_open();
 
         /* --- */
 
         /* A.W.:
         *   _close_helper error 
         */
-        ut_lind_fs_multiple_open();
-        // ut_lind_fs_load_fs();
-        // ut_lind_fs_file_link_unlink();
+        
+        
+        ut_lind_fs_file_link_unlink();
         // ut_lind_fs_exec_cloexec();
 
         /* A.W.:
         *   related to /tmp file?? need to consider more conditions 
         */
         // ut_lind_fs_tmp_file_test();
+
+        /* A.W.:
+        *   loading phase
+        */
+        // ut_lind_fs_load_fs();
 
         /* --- */
         
