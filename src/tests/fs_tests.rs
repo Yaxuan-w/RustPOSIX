@@ -580,8 +580,8 @@ pub mod fs_tests {
 
         let mut buf = sizecbuf(16);
         assert_eq!(cage.lseek_syscall(fd, 0, SEEK_SET), 0);
-        cage.read_syscall(fd, buf.as_mut_ptr(), 20);
-        // assert_eq!(cage.read_syscall(fd, buf.as_mut_ptr(), 20), 16);
+        // cage.read_syscall(fd, buf.as_mut_ptr(), 20);
+        assert_eq!(cage.read_syscall(fd, buf.as_mut_ptr(), 20), 16);
         assert_eq!(cbuf2str(&buf), "hello\0\0\0\0\0123456");
 
         assert_eq!(cage.close_syscall(fd), 0);
