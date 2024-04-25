@@ -1316,7 +1316,6 @@ impl Cage {
                             //if it's not a reg file, then we have nothing to close
                             //Inode::File is a regular file by default
                             if normalfile_inode_obj.refcount == 0 {
-                                FILEOBJECTTABLE.remove(&inodenum).unwrap().1.close().unwrap();
                                 if normalfile_inode_obj.linkcount == 0 {
                                     drop(inodeobj);
                                     /* A.W.:
@@ -1332,6 +1331,7 @@ impl Cage {
                                     drop(inodeobj);
                                 }
                                 // log_metadata(&FS_METADATA, inodenum);
+                                FILEOBJECTTABLE.remove(&inodenum).unwrap().1.close().unwrap();
                             }
                         },
                         Inode::Dir(ref mut dir_inode_obj) => {
