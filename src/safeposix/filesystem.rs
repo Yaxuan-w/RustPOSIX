@@ -316,14 +316,16 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                 let allowmask = O_RDWRFLAGS | O_CLOEXEC;
                 let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
                 let _insertval = fdoption.insert(FileDescriptor::File(newfd));
+                
             }
             (Some(_inodenum), ..) => {
                 panic!("File already exists in loading phasae");
             }
         }
+        
     }
-    // 3
-    panic!("Something went wrong: {:?}", "END");
+    
+
     Ok(())
     
 }
