@@ -641,7 +641,7 @@ pub mod fs_tests {
     pub fn ut_lind_fs_load_fs() {
         lindrustinit(0);
         let cage = interface::cagetable_getref(1);
-
+        panic!("Something wrong");
         // let mut statdata = StatData::default();
 
         //testing that all of the dev files made it out safe and sound

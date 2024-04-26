@@ -719,7 +719,6 @@ pub extern "C" fn lindrustinit(verbosity: isize) {
     *   For TEST 
     */
     let _ = load_fs("/home/RustPOSIX/test.txt", 1);
-    panic!("Something wrong");
 }
 
 #[no_mangle]
