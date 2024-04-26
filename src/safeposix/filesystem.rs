@@ -278,14 +278,14 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
         let _ = emulated_file.writefile_from_bytes(&content);
         
+        
         if count == 1 {
-            count = count + 1;
             let mut test = vec![0;2];   
             test.clone().into_boxed_slice();
             emulated_file.readat(test.as_mut_ptr(), 2, 0);
             panic!("Something wrong {:?}", std::str::from_utf8(&test).unwrap());
         }
-        
+        count = count + 1;
         
         // Add to metadata
         let cage = interface::cagetable_getref(cageid);
