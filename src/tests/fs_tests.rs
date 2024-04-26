@@ -36,7 +36,7 @@ pub mod fs_tests {
         // ut_lind_fs_truncate();
         // ut_lind_fs_getdents();
         // ut_lind_fs_dir_chdir_getcwd();
-        rdwrtest();
+        // rdwrtest();
         // prdwrtest();
         // chardevtest();
         // ut_lind_fs_multiple_open();
@@ -50,7 +50,7 @@ pub mod fs_tests {
         // ut_lind_fs_tmp_file_test();
         // ut_lind_fs_load_fs();
         // ut_lind_fs_load_test();
-        // ut_lind_fs_vfs_same_rw();
+        ut_lind_fs_vfs_same_rw();
     }
 
     pub fn ut_lind_fs_vfs_same_rw() {
