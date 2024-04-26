@@ -114,7 +114,7 @@ const SYNC_FILE_RANGE: i32 = 164;
 use crate::interface;
 use super::cage::*;
 // use super::filesystem::{FS_METADATA, load_fs, incref_root, remove_domain_sock, persist_metadata, LOGMAP, LOGFILENAME, FilesystemMetadata};
-use super::filesystem::{FS_METADATA, incref_root, remove_domain_sock, LOGFILENAME, FilesystemMetadata};
+use super::filesystem::{FS_METADATA, load_fs, incref_root, remove_domain_sock, LOGFILENAME, FilesystemMetadata};
 use super::shm::{SHM_METADATA};
 use super::net::{NET_METADATA};
 use crate::interface::errnos::*;
@@ -662,7 +662,7 @@ pub extern "C" fn lindrustinit(verbosity: isize) {
 
     let buffer = vec![0u8; 5*MB];
     
-    // load_fs();
+    
     incref_root();
     incref_root();
 
@@ -687,7 +687,7 @@ pub extern "C" fn lindrustinit(verbosity: isize) {
         main_threadid: interface::RustAtomicU64::new(0),
         interval_timer: interface::IntervalTimer::new(0)
     };
-
+    
     interface::cagetable_insert(0, utilcage);
 
     //init cage is its own parent
@@ -715,6 +715,10 @@ pub extern "C" fn lindrustinit(verbosity: isize) {
     interface::cagetable_insert(1, initcage);
     // make sure /tmp is clean
     cleartmp(true);
+    /* A.W.:
+    *   For TEST 
+    */
+    load_fs("/home/RustPOSIX/test.txt", 1);
 }
 
 #[no_mangle]

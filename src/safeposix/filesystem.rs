@@ -228,7 +228,7 @@ pub fn format_fs() {
 /* A.W.:
 *   [Want to re-implement load_fs() for IMFS] 
 */
-pub fn load_fs(input_path: &str, cage: &Cage) -> std::io::Result<()> {
+pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
     /* 
     *   Loading File is consisted by two parts: (filename filesize filepath;filename2 filesize2 filepath2;...)"not whitespace between size
     *   and next filename" followed by contents
@@ -269,13 +269,14 @@ pub fn load_fs(input_path: &str, cage: &Cage) -> std::io::Result<()> {
     // Read contents into EmulatedFile according to file information entry
     for (filename, filesize, filepath) in file_entries {
         let mut content = Vec::new();
-        reader.read_until(filesize as u8, &mut content);
+        let _ = reader.read_until(filesize as u8, &mut content);
 
         // Create a new emulated file and write the contents
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
         let _ = emulated_file.writefile_from_bytes(&content);
         // Add to metadata
-        let truepath = normpath(convpath(filepath), cage);
+        let cage = interface::cagetable_getref(cageid);
+        let truepath = normpath(convpath(filepath), &cage);
         if filepath.len() == 0 { panic!("No path in loading phase"); }
         let (fd, guardopt) = cage.get_next_fd(None);
         if fd < 0 { panic!("Cannot get fd table in loading phase"); }
@@ -313,7 +314,7 @@ pub fn load_fs(input_path: &str, cage: &Cage) -> std::io::Result<()> {
                 let _insertval = fdoption.insert(FileDescriptor::File(newfd));
             }
             (Some(_inodenum), ..) => {
-                panic!("File {inodenum} already exists in loading phasae");
+                panic!("File already exists in loading phasae");
             }
         }
         
