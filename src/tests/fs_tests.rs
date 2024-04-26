@@ -49,11 +49,11 @@ pub mod fs_tests {
         // ut_lind_fs_shm();
         // ut_lind_fs_tmp_file_test();
         // ut_lind_fs_load_fs();
-        // ut_lind_fs_load_test();
+        ut_lind_fs_load_test();
     }
 
     pub fn ut_lind_fs_load_test() {
-        lindrustinit(0, true);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let fd = cage.open_syscall("/k.txt", O_RDWR, S_IRWXA);
         assert!(fd >= 0);
