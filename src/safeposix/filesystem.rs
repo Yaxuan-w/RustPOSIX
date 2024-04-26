@@ -267,7 +267,6 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
         }
     }
    
-    let mut count = 0;
     // Read contents into EmulatedFile according to file information entry
     for (filename, filesize, filepath) in file_entries {
         let mut content = vec![0;filesize];
@@ -311,8 +310,7 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                 if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
                     vac.insert(emulated_file);
                 }
-                if count == 1 { panic!("Something went wrong: {:?}", 2); }
-                count = count + 1;
+                
                 // Add to FDTABLE
                 let position = if 0 != flags & O_APPEND {filesize} else {0};
                 let allowmask = O_RDWRFLAGS | O_CLOEXEC;
@@ -325,6 +323,7 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
         }
     }
     // 3
+    panic!("Something went wrong: {:?}", "END");
     Ok(())
     
 }
