@@ -23,7 +23,7 @@ mod main_tests {
     pub fn tests() {
         interface::RUSTPOSIX_TESTSUITE.store(true, interface::RustAtomicOrdering::Relaxed);
         
-        lindrustinit(0);
+        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
         {
             let cage = interface::cagetable_getref(1);
             // crate::lib_fs_utils::lind_deltree(&cage, "/");
