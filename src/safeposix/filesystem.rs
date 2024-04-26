@@ -272,8 +272,8 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
         let _ = reader.read_until(filesize as u8, &mut content);
 
         // Create a new emulated file and write the contents
-
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
+        panic!("STOP!");
         let _ = emulated_file.writefile_from_bytes(&content);
         // Add to metadata
         let cage = interface::cagetable_getref(cageid);
@@ -306,7 +306,6 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                 }
                 FS_METADATA.inodetable.insert(newinodenum, newinode);
                 if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
-                    let sysfilename = format!("{}{}", FILEDATAPREFIX, newinodenum);
                     vac.insert(emulated_file);
                 }
                 let position = if 0 != flags & O_APPEND {filesize} else {0};
