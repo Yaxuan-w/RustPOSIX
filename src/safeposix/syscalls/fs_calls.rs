@@ -124,6 +124,8 @@ impl Cage {
                             vac.insert(interface::openfile(sysfilename).unwrap());
                         }
                         
+                        let open_emulatedfile = FILEOBJECTTABLE.get(&inodenum).unwrap();
+                        let _ = open_emulatedfile.open();
                         size = f.size;
                         f.refcount += 1;
                     }
@@ -1332,6 +1334,7 @@ impl Cage {
                                     let _ = emulatedfile.shrink(0);
                                     //removing the file from the entire filesystem (interface, metadata, and object table)
                                     FS_METADATA.inodetable.remove(&inodenum);
+                                    emulatedfile.close();
                                     // let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
                                     // interface::removefile(sysfilename).unwrap();
                                 } else {

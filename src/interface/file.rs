@@ -172,6 +172,11 @@ impl EmulatedFile {
         Ok(EmulatedFile {filesize: 0 as usize, memory_block: Vec::new(), filename: filename})
     }
 
+    pub fn open(&self) -> std::io::Result<()> {
+        OPEN_FILES.insert(self.filename.clone());
+        Ok(())
+    }
+
     pub fn close(&self) -> std::io::Result<()> {
         OPEN_FILES.remove(&self.filename);
         Ok(())
