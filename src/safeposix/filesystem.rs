@@ -308,6 +308,7 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                 
                 FS_METADATA.inodetable.insert(newinodenum, newinode);
                 if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
+                    emulated_file.close();
                     vac.insert(emulated_file);
                 }
                 
