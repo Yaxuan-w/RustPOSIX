@@ -49,8 +49,21 @@ pub mod fs_tests {
         ut_lind_fs_shm();
         ut_lind_fs_tmp_file_test();
         ut_lind_fs_load_fs();
+        ut_lind_fs_load_test();
     }
 
+    pub fn ut_lind_fs_load_test() {
+        lindrustinit(0, false);
+        let cage = interface::cagetable_getref(1);
+        let fd = cage.open_syscall("/k.txt", O_RDWR, S_IRWXA);
+        assert!(fd >= 0);
+        let mut read_buf1 = sizecbuf(2);
+        assert_eq!(cage.read_syscall(fd, read_buf1.as_mut_ptr(), 2), 2);
+        assert_eq!(cbuf2str(&read_buf1), "tm");
+        assert_eq!(cage.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
+
+        lindrustfinalize();
+    }
 
     pub fn ut_lind_fs_simple() {
         lindrustinit(0, true);
