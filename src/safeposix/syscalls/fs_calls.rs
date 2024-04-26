@@ -1334,7 +1334,7 @@ impl Cage {
                                     let _ = emulatedfile.shrink(0);
                                     //removing the file from the entire filesystem (interface, metadata, and object table)
                                     FS_METADATA.inodetable.remove(&inodenum);
-                                    emulatedfile.close();
+                                    let _ = emulatedfile.close();
                                     // let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
                                     // interface::removefile(sysfilename).unwrap();
                                 } else {

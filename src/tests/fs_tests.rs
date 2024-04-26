@@ -59,7 +59,6 @@ pub mod fs_tests {
         let cage2 = interface::cagetable_getref(1);
 
         let fd2 = cage2.open_syscall("/k.txt", O_RDWR, S_IRWXA);
-        panic!("Something Wrong {:?}", OPEN_FILES);
         assert!(fd2 >= 0);
         let mut test2 = vec![0;2];   
         test2.clone().into_boxed_slice();
@@ -67,7 +66,6 @@ pub mod fs_tests {
         assert_eq!(std::str::from_utf8(&test2).unwrap(), "tm");
 
         assert_eq!(cage2.write_syscall(fd2, str2cbuf("hello there!"), 12), 12);
-        panic!("Something Wrong {:?}", OPEN_FILES);
         
         assert_eq!(cage2.lseek_syscall(fd2, 0, SEEK_SET), 0);
         let mut read_buf2_0 = sizecbuf(14);
