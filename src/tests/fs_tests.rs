@@ -36,7 +36,7 @@ pub mod fs_tests {
         // ut_lind_fs_truncate();
         // ut_lind_fs_getdents();
         // ut_lind_fs_dir_chdir_getcwd();
-        rdwrtest();
+        // rdwrtest();
         // prdwrtest();
         // chardevtest();
         // ut_lind_fs_multiple_open();
@@ -50,7 +50,7 @@ pub mod fs_tests {
         // ut_lind_fs_tmp_file_test();
         // ut_lind_fs_load_fs();
         // ut_lind_fs_load_test();
-        // ut_lind_fs_vfs_same_rw();
+        ut_lind_fs_vfs_same_rw();
     }
 
     pub fn ut_lind_fs_vfs_same_rw() {
@@ -67,6 +67,11 @@ pub mod fs_tests {
 
         assert_eq!(cage2.write_syscall(fd2, str2cbuf("hello there!"), 12), 12);
         
+        assert_eq!(cage2.lseek_syscall(fd2, 0, SEEK_SET), 0);
+        let mut read_buf2_0 = sizecbuf(14);
+        assert_eq!(cage2.read_syscall(fd2, read_buf2_0.as_mut_ptr(), 14), 14);
+        assert_eq!(cbuf2str(&read_buf2_0), "tmhello there!");
+
         assert_eq!(cage2.lseek_syscall(fd2, 2, SEEK_SET), 2);
         let mut read_buf2_1 = sizecbuf(5);
         assert_eq!(cage2.read_syscall(fd2, read_buf2_1.as_mut_ptr(), 5), 5);
