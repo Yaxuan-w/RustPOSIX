@@ -267,11 +267,13 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
         }
     }
    
+    let mut count = 0;
     // Read contents into EmulatedFile according to file information entry
     for (filename, filesize, filepath) in file_entries {
         let mut content = vec![0;filesize];
         let _ = reader.read(&mut content);
-        panic!("Something went wrong: {:?}", content);
+        if count == 1 { panic!("Something went wrong: {:?}", content); }
+        count = count + 1;
         // Create a new emulated file and write the contents
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
         let _ = emulated_file.writefile_from_bytes(&content);
