@@ -619,6 +619,11 @@ impl Cage {
                             if let Ok(bytesread) = fileobject.readat(buf, count, position) {
                                 //move position forward by the number of bytes we've read
 
+                                // let mut test = vec![0;2];   
+                                // test.clone().into_boxed_slice();
+                                // emulated_file.readat(test.as_mut_ptr(), 2, 0);
+                                // panic!("Something wrong {:?}", std::str::from_utf8(buf).unwrap());
+
                                 normalfile_filedesc_obj.position += bytesread;
                                 bytesread as i32
                             } else {

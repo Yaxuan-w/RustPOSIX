@@ -330,7 +330,7 @@ impl EmulatedFile {
         if new_block_total + 1 < self.memory_block.len() {
             // Get the deleted block
             removed_block = self.memory_block.iter().skip(new_block_total + 1).cloned().collect();
-            self.memory_block.truncate(new_block_total + 1);
+            // self.memory_block.truncate(new_block_total + 1);
         }
         // Update memory list
         remove_fs(removed_block);

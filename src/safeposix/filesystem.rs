@@ -233,8 +233,6 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
     /* 
     *   Loading File is consisted by two parts: (filename filesize filepath;filename2 filesize2 filepath2;...)"not whitespace between size
     *   and next filename" followed by contents
-    *   [NEED TO CONSIDER]
-    *   - Pass in filepath and form file tree
     *
     *   Consider using open_syscall() for reference, because we need to handle path
     *   1. Get the file list with their size
@@ -324,7 +322,7 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                 }
                 
                 // Add to FDTABLE
-                let position = if 0 != flags & O_APPEND {filesize} else {0};
+                let position = 0;
                 let allowmask = O_RDWRFLAGS | O_CLOEXEC;
                 let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
                 let _insertval = fdoption.insert(FileDescriptor::File(newfd));
