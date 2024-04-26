@@ -270,11 +270,11 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
     for (filename, filesize, filepath) in file_entries {
         let mut content = Vec::new();
         let _ = reader.read_until(filesize as u8, &mut content);
-
+        panic!("Something went wrong: {:?}", filesize);
         // Create a new emulated file and write the contents
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
         let _ = emulated_file.writefile_from_bytes(&content);
-        panic!("Something went wrong: {:?}", emulated_file);
+        
         // Add to metadata
         let cage = interface::cagetable_getref(cageid);
         let truepath = normpath(convpath(filepath), &cage);
