@@ -263,18 +263,6 @@ impl EmulatedFile {
             panic!("Seek offset extends past the EOF!");
         }
 
-        if self.memory_block.len() == 0 {
-            // Initialization file memory
-            self.filesize = length;
-            let allocated = allocate(length);
-            self.memory_block.extend(allocated.iter().cloned());
-        } else if length + offset > self.filesize {
-            let extendsize = length + offset - self.filesize;
-            // If need extend
-            self.filesize = length + offset;
-            let extendblock = allocate(extendsize);
-            self.memory_block.extend(extendblock.iter().cloned());
-        }
         // Calculate the offset
         // offset_block = start from which block
         // offset_pos = start from which position inside that block
@@ -283,6 +271,23 @@ impl EmulatedFile {
         } else {
             (offset / page_size, offset % page_size)
         };
+
+        // Last block has enough space...?
+        let lastblock_space = page_size - offset_pos;
+        let extendsize = length + offset - self.filesize;
+
+        if self.memory_block.len() == 0 {
+            // Initialization file memory
+            self.filesize = length;
+            let allocated = allocate(length);
+            self.memory_block.extend(allocated.iter().cloned());
+        } else if lastblock_space < extendsize {
+            // If need extend
+            self.filesize = length + offset;
+            let extendblock = allocate(extendsize);
+            self.memory_block.extend(extendblock.iter().cloned());
+        }
+        
         let mut remain_len = length;
         for (i, &index) in self.memory_block.iter().enumerate() {
             if i < offset_block {

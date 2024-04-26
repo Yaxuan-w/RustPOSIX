@@ -64,7 +64,7 @@ pub mod fs_tests {
         test2.clone().into_boxed_slice();
         assert_eq!(cage2.read_syscall(fd2, test2.as_mut_ptr(), 2), 2);
         assert_eq!(std::str::from_utf8(&test2).unwrap(), "tm");
-        panic!("Something wrong{:?}", FILEOBJECTTABLE);
+        // panic!("Something wrong{:?}", FILEOBJECTTABLE);
         assert_eq!(cage2.write_syscall(fd2, str2cbuf("hello there!"), 12), 12);
 
         panic!("Something wrong{:?}", FILEOBJECTTABLE);
