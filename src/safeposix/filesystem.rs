@@ -272,8 +272,7 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
     for (filename, filesize, filepath) in file_entries {
         let mut content = vec![0;filesize];
         let _ = reader.read(&mut content);
-        if count == 1 { panic!("Something went wrong: {:?}", content); }
-        count = count + 1;
+        
         // Create a new emulated file and write the contents
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
         let _ = emulated_file.writefile_from_bytes(&content);
@@ -307,6 +306,10 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                 } else {
                     panic!("It's a dictionary in loading phase");
                 }
+
+                if count == 1 { panic!("Something went wrong: {:?}", interface::OPEN_FILES); }
+                count = count + 1;
+                
                 FS_METADATA.inodetable.insert(newinodenum, newinode);
                 if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
                     vac.insert(emulated_file);
