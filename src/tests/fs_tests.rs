@@ -36,7 +36,7 @@ pub mod fs_tests {
         // ut_lind_fs_truncate();
         // ut_lind_fs_getdents();
         // ut_lind_fs_dir_chdir_getcwd();
-        // rdwrtest();
+        rdwrtest();
         // prdwrtest();
         // chardevtest();
         // ut_lind_fs_multiple_open();
@@ -50,7 +50,7 @@ pub mod fs_tests {
         // ut_lind_fs_tmp_file_test();
         // ut_lind_fs_load_fs();
         // ut_lind_fs_load_test();
-        ut_lind_fs_vfs_same_rw();
+        // ut_lind_fs_vfs_same_rw();
     }
 
     pub fn ut_lind_fs_vfs_same_rw() {
@@ -135,7 +135,7 @@ pub mod fs_tests {
 
         let fd = cage.open_syscall("/foobar", O_CREAT | O_TRUNC | O_RDWR, S_IRWXA);
         assert!(fd >= 0);
- 
+        panic!("Something Wrong {:?}", OPEN_FILES);
         assert_eq!(cage.write_syscall(fd, str2cbuf("hello there!"), 12), 12);
 
         assert_eq!(cage.lseek_syscall(fd, 0, SEEK_SET), 0);
