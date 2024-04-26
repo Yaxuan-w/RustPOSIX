@@ -9,7 +9,7 @@ pub mod fs_tests {
     use std::fs::OpenOptions;
 
     pub fn test_fs() {
-        // ut_lind_fs_simple(); // has to go first, else the data files created screw with link count test
+        ut_lind_fs_simple(); // has to go first, else the data files created screw with link count test
         /* Pass */
         // ut_lind_fs_broken_close(); 
         // ut_lind_fs_chmod();
