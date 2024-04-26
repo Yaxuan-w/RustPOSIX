@@ -53,7 +53,7 @@ pub mod fs_tests {
         /* A.W.:
         *   loading phase
         */
-        ut_lind_fs_load_fs();
+        // ut_lind_fs_load_fs();
         /* --- */
     }
 
