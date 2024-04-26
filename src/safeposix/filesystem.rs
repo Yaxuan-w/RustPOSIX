@@ -9,6 +9,7 @@ use super::net::NET_METADATA;
 use super::cage::{Cage, FileDesc, FileDescriptor};
 
 use std::io::BufRead;
+use std::io::Read;
 
 pub const METADATAFILENAME: &str = "lind.metadata";
 
@@ -268,8 +269,8 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
    
     // Read contents into EmulatedFile according to file information entry
     for (filename, filesize, filepath) in file_entries {
-        let mut content = Vec::new();
-        let _ = reader.read_until(filesize as u8, &mut content);
+        let mut content = vec![0;filesize];
+        let _ = reader.read(&mut content);
         panic!("Something went wrong: {:?}", content);
         // Create a new emulated file and write the contents
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
