@@ -258,11 +258,9 @@ impl EmulatedFile {
             assert!(!ptr.is_null());
             slice::from_raw_parts(ptr, length)
         };
-
         if offset > self.filesize {
             panic!("Seek offset extends past the EOF!");
         }
-
         // Calculate the offset
         // offset_block = start from which block
         // offset_pos = start from which position inside that block
@@ -272,22 +270,21 @@ impl EmulatedFile {
             (offset / page_size, offset % page_size)
         };
 
-        // Last block has enough space...?
-        let lastblock_space = page_size - offset_pos;
-
         if self.memory_block.len() == 0 {
             // Initialization file memory
             self.filesize = length;
             let allocated = allocate(length);
             self.memory_block.extend(allocated.iter().cloned());
-        } else if length + offset > lastblock_space {
+        } else if length + offset > self.filesize {
+            let extendsize = length + offset - self.filesize;
             // If need extend
-            let extendsize = length + offset - lastblock_space - self.filesize;
+            if offset_pos + length > page_size {
+                let extendblock = allocate(extendsize);
+                self.memory_block.extend(extendblock.iter().cloned());
+            }
             self.filesize = length + offset;
-            let extendblock = allocate(extendsize);
-            self.memory_block.extend(extendblock.iter().cloned());
-        } else { self.filesize = length + offset; }
-
+        }
+        
         let mut remain_len = length;
         for (i, &index) in self.memory_block.iter().enumerate() {
             if i < offset_block {
@@ -310,7 +307,6 @@ impl EmulatedFile {
                         copy(ptr, ptr_mem, bytes_to_copy);
                         ptr = ptr.add(bytes_to_copy);
                     }
-
                     if remain_len == 0 { break; }
                 },
                 Err(e) => {
