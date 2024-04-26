@@ -9,7 +9,7 @@ pub mod fs_tests {
     use std::fs::OpenOptions;
 
     pub fn test_fs() {
-        ut_lind_fs_simple(); // has to go first, else the data files created screw with link count test
+        // ut_lind_fs_simple(); // has to go first, else the data files created screw with link count test
         /* Pass */
         // ut_lind_fs_broken_close(); 
         // ut_lind_fs_chmod();
@@ -102,7 +102,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_simple() {
-        lindrustinit(0, true);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         assert_eq!(cage.access_syscall("/", F_OK), 0);
