@@ -265,65 +265,64 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
             }
         }
     }
-    panic!("Something went wrong: {:?}", file_entries);
-    // Ok(())
+   
     // Read contents into EmulatedFile according to file information entry
-    // for (filename, filesize, filepath) in file_entries {
-    //     let mut content = Vec::new();
-    //     let _ = reader.read_until(filesize as u8, &mut content);
+    for (filename, filesize, filepath) in file_entries {
+        let mut content = Vec::new();
+        let _ = reader.read_until(filesize as u8, &mut content);
 
-    //     // Create a new emulated file and write the contents
-    //     let mut emulated_file = interface::openfile(filename.clone()).unwrap();
-    //     let _ = emulated_file.writefile_from_bytes(&content);
+        // Create a new emulated file and write the contents
+        let mut emulated_file = interface::openfile(filename.clone()).unwrap();
+        let _ = emulated_file.writefile_from_bytes(&content);
+        panic!("Something went wrong: {:?}", emulated_file);
+        // Add to metadata
+        let cage = interface::cagetable_getref(cageid);
+        let truepath = normpath(convpath(filepath), &cage);
+        if filepath.len() == 0 { panic!("No path in loading phase"); }
+        let (fd, guardopt) = cage.get_next_fd(None);
+        if fd < 0 { panic!("Cannot get fd table in loading phase"); }
+        let fdoption = &mut *guardopt.unwrap();
+        let flags = O_RDWR | O_CREAT | O_APPEND;
+        match metawalkandparent(truepath.as_path()) {
+            (None, None) => {
+                panic!("Cannot create files in loading phase");
+            }
+            (None, Some(pardirinode)) => {
+                let mode = 0o777;
+                let effective_mode = S_IFREG as u32 | mode;
+                let time = interface::timestamp(); //We do a real timestamp now
+                let newinode = Inode::File(GenericInode {
+                    size: 0, uid: DEFAULT_UID, gid: DEFAULT_GID,
+                    mode: effective_mode, linkcount: 1, refcount: 1,
+                    atime: time, ctime: time, mtime: time,
+                });
+                let newinodenum = FS_METADATA.nextinode.fetch_add(1, interface::RustAtomicOrdering::Relaxed); //fetch_add returns the previous value, which is the inode number we want
+                if let Inode::Dir(ref mut ind) = *(FS_METADATA.inodetable.get_mut(&pardirinode).unwrap()) {
+                    ind.filename_to_inode_dict.insert(filename.clone(), newinodenum);
+                    ind.linkcount += 1;
+                    //insert a reference to the file in the parent directory
+                } else {
+                    panic!("It's a dictionary in loading phase");
+                }
+                FS_METADATA.inodetable.insert(newinodenum, newinode);
+                if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
+                    vac.insert(emulated_file);
+                }
+                let position = if 0 != flags & O_APPEND {filesize} else {0};
+                let allowmask = O_RDWRFLAGS | O_CLOEXEC;
+                let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
+                let _insertval = fdoption.insert(FileDescriptor::File(newfd));
+            }
+            (Some(_inodenum), ..) => {
+                panic!("File already exists in loading phasae");
+            }
+        }
         
-    //     // Add to metadata
-    //     let cage = interface::cagetable_getref(cageid);
-    //     let truepath = normpath(convpath(filepath), &cage);
-    //     if filepath.len() == 0 { panic!("No path in loading phase"); }
-    //     let (fd, guardopt) = cage.get_next_fd(None);
-    //     if fd < 0 { panic!("Cannot get fd table in loading phase"); }
-    //     let fdoption = &mut *guardopt.unwrap();
-    //     let flags = O_RDWR | O_CREAT | O_APPEND;
-    //     match metawalkandparent(truepath.as_path()) {
-    //         (None, None) => {
-    //             panic!("Cannot create files in loading phase");
-    //         }
-    //         (None, Some(pardirinode)) => {
-    //             let mode = 0o777;
-    //             let effective_mode = S_IFREG as u32 | mode;
-    //             let time = interface::timestamp(); //We do a real timestamp now
-    //             let newinode = Inode::File(GenericInode {
-    //                 size: 0, uid: DEFAULT_UID, gid: DEFAULT_GID,
-    //                 mode: effective_mode, linkcount: 1, refcount: 1,
-    //                 atime: time, ctime: time, mtime: time,
-    //             });
-    //             let newinodenum = FS_METADATA.nextinode.fetch_add(1, interface::RustAtomicOrdering::Relaxed); //fetch_add returns the previous value, which is the inode number we want
-    //             if let Inode::Dir(ref mut ind) = *(FS_METADATA.inodetable.get_mut(&pardirinode).unwrap()) {
-    //                 ind.filename_to_inode_dict.insert(filename.clone(), newinodenum);
-    //                 ind.linkcount += 1;
-    //                 //insert a reference to the file in the parent directory
-    //             } else {
-    //                 panic!("It's a dictionary in loading phase");
-    //             }
-    //             FS_METADATA.inodetable.insert(newinodenum, newinode);
-    //             if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
-    //                 vac.insert(emulated_file);
-    //             }
-    //             let position = if 0 != flags & O_APPEND {filesize} else {0};
-    //             let allowmask = O_RDWRFLAGS | O_CLOEXEC;
-    //             let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
-    //             let _insertval = fdoption.insert(FileDescriptor::File(newfd));
-    //         }
-    //         (Some(_inodenum), ..) => {
-    //             panic!("File already exists in loading phasae");
-    //         }
-    //     }
         
-        
-    //     // Add to fdtable
-    // }
-    // // 3
-    // Ok(())
+        // Add to fdtable
+    }
+    // 3
+    Ok(())
     
 }
 // pub fn load_fs() {

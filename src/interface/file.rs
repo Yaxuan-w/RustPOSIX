@@ -149,6 +149,7 @@ pub fn remove_fs(index_list: Vec<usize>) {
     }
 }
 
+#[derive(Debug)]
 pub struct EmulatedFile {
     pub filesize: usize,
     pub memory_block: Vec<usize>,
