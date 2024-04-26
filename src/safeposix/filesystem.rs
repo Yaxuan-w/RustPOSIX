@@ -320,7 +320,7 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                 
             }
             (Some(_inodenum), ..) => {
-                panic!("File already exists in loading phasae");
+                // panic!("File already exists in loading phasae");
             }
         }
         
