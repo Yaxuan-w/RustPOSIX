@@ -69,7 +69,7 @@ pub mod fs_tests {
 
         assert_eq!(cage2.write_syscall(fd2, str2cbuf("hello there!"), 12), 12);
 
-        // panic!("Something wrong{:?}", FILEOBJECTTABLE);
+        panic!("Something wrong{:?}", interface::GLOBAL_MEMORY);
         
         assert_eq!(cage2.lseek_syscall(fd2, 0, SEEK_SET), 0);
         let mut read_buf2_0 = sizecbuf(14);

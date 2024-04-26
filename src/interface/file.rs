@@ -85,7 +85,7 @@ fn assert_is_allowed_filename(filename: &String) {
 }
 
 
-
+#[derive(Debug)]
 pub struct Memory {
     pub base_address: RustMutex<usize>,
     pub memory_list: RustMutex<Vec<usize>>,
@@ -287,7 +287,7 @@ impl EmulatedFile {
             let extendblock = allocate(extendsize);
             self.memory_block.extend(extendblock.iter().cloned());
         } else { self.filesize = length + offset; }
-        
+
         let mut remain_len = length;
         for (i, &index) in self.memory_block.iter().enumerate() {
             if i < offset_block {
