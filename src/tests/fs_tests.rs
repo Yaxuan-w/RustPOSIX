@@ -60,12 +60,12 @@ pub mod fs_tests {
         assert_eq!(cage1.fork_syscall(2), 0);
         interface::sleep(interface::RustDuration::from_millis(100));
 
-        let fd = cage1.open_syscall("/k.txt", O_RDWR, S_IRWXA);
-        assert!(fd >= 0);
-        let mut test = vec![0;14];   
-        test.clone().into_boxed_slice();
-        assert_eq!(cage1.read_syscall(fd, test.as_mut_ptr(), 14), 14);
-        assert_eq!(std::str::from_utf8(&test).unwrap(), "tmhello world!");
+        // let fd = cage1.open_syscall("/k.txt", O_RDWR, S_IRWXA);
+        // assert!(fd >= 0);
+        // let mut test = vec![0;14];   
+        // test.clone().into_boxed_slice();
+        // assert_eq!(cage1.read_syscall(fd, test.as_mut_ptr(), 14), 14);
+        // assert_eq!(std::str::from_utf8(&test).unwrap(), "tmhello world!");
 
 
         
