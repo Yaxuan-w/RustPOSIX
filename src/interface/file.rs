@@ -286,7 +286,7 @@ impl EmulatedFile {
             self.filesize = length + offset;
             let extendblock = allocate(extendsize);
             self.memory_block.extend(extendblock.iter().cloned());
-        } 
+        } else { self.filesize = length + offset; }
         
         let mut remain_len = length;
         for (i, &index) in self.memory_block.iter().enumerate() {
