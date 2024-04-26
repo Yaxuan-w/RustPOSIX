@@ -267,7 +267,7 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
         }
     }
    
-    let mut count = 0;
+    // let mut count = 0;
     // Read contents into EmulatedFile according to file information entry
     for (filename, filesize, filepath) in file_entries {
         let mut content = vec![0;filesize];
@@ -307,13 +307,14 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                     panic!("It's a dictionary in loading phase");
                 }
 
-                if count == 1 { panic!("Something went wrong: {:?}", interface::OPEN_FILES); }
-                count = count + 1;
+                // if count == 1 { panic!("Something went wrong: {:?}", interface::OPEN_FILES); }
+                // count = count + 1;
                 
                 FS_METADATA.inodetable.insert(newinodenum, newinode);
                 if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
                     vac.insert(emulated_file);
                 }
+                // Add to FDTABLE
                 let position = if 0 != flags & O_APPEND {filesize} else {0};
                 let allowmask = O_RDWRFLAGS | O_CLOEXEC;
                 let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
@@ -323,9 +324,6 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                 panic!("File already exists in loading phasae");
             }
         }
-        
-        
-        // Add to fdtable
     }
     // 3
     Ok(())

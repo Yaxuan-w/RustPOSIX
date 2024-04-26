@@ -22,7 +22,7 @@ use std::convert::TryInto;
 use crate::interface::errnos::{Errno, syscall_error};
 
 
-pub static OPEN_FILES: RustLazyGlobal<Arc<DashSet<String>>> = RustLazyGlobal::new(|| Arc::new(DashSet::new()));
+static OPEN_FILES: RustLazyGlobal<Arc<DashSet<String>>> = RustLazyGlobal::new(|| Arc::new(DashSet::new()));
 
 
 
