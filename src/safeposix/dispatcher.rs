@@ -638,7 +638,7 @@ pub extern "C" fn lindgetsighandler(cageid: u64, signo: i32) -> u32 {
 }
 
 #[no_mangle]
-pub extern "C" fn lindrustinit(verbosity: isize, load_path: &str, load_flag: bool) {
+pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
     let _ = interface::VERBOSE.set(verbosity); //assigned to suppress unused result warning
     interface::cagetable_init();
     
@@ -718,6 +718,7 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_path: &str, load_flag: boo
     /* A.W.:
     *   For TEST 
     */
+    let load_path = "/home/RustPOSIX/test.txt";
     if load_flag {
         let _ = load_fs(load_path, 1);
     }

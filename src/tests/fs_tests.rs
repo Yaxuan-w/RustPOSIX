@@ -59,7 +59,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_simple() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", true);
+        lindrustinit(0, true);
         let cage = interface::cagetable_getref(1);
 
         assert_eq!(cage.access_syscall("/", F_OK), 0);
@@ -84,7 +84,7 @@ pub mod fs_tests {
 
 
     pub fn rdwrtest() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let fd = cage.open_syscall("/foobar", O_CREAT | O_TRUNC | O_RDWR, S_IRWXA);
@@ -112,7 +112,7 @@ pub mod fs_tests {
 
 
     pub fn prdwrtest() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let fd = cage.open_syscall("/foobar2", O_CREAT | O_TRUNC | O_RDWR, S_IRWXA);
@@ -136,7 +136,7 @@ pub mod fs_tests {
 
 
     pub fn chardevtest() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let fd = cage.open_syscall("/dev/zero", O_RDWR, S_IRWXA);
@@ -166,7 +166,7 @@ pub mod fs_tests {
 
         //testing a muck up with the inode table where the regular close does not work as intended
 
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //write should work
@@ -201,7 +201,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_chmod() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let flags: i32 = O_TRUNC | O_CREAT | O_RDWR;
@@ -227,7 +227,7 @@ pub mod fs_tests {
     }
 
    pub fn ut_lind_fs_fchmod() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let flags: i32 = O_TRUNC | O_CREAT | O_RDWR;
@@ -255,7 +255,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_dir_chdir() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         
         //testing the ability to make and change to directories
@@ -281,7 +281,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_dir_mode() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let filepath1 = "/subdirDirMode1";
@@ -304,7 +304,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_dir_multiple() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         assert_eq!(cage.mkdir_syscall("/subdirMultiple1", S_IRWXA), 0);
@@ -327,7 +327,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_dup() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let flags: i32 = O_TRUNC | O_CREAT | O_RDWR;
@@ -383,7 +383,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_dup2() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let flags: i32 = O_TRUNC | O_CREAT | O_RDWR;
@@ -427,7 +427,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_fcntl() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let sockfd = cage.socket_syscall(AF_INET, SOCK_STREAM, 0);
@@ -453,7 +453,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_ioctl() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         
         let mut arg0: i32 = 0;
@@ -494,7 +494,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_fdflags() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let path = "/fdFlagsFile";
@@ -529,7 +529,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_file_link_unlink() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let path = "/fileLink";
@@ -571,7 +571,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_file_lseek_past_end() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let path = "/lseekPastEnd";
@@ -597,7 +597,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_fstat_complex() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
 
         let cage = interface::cagetable_getref(1);
         let path = "/complexFile";
@@ -619,7 +619,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_getuid() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //let's get the initial -1s out of the way
@@ -641,7 +641,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_load_fs() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let mut statdata = StatData::default();
 
@@ -665,7 +665,7 @@ pub mod fs_tests {
 
     pub fn ut_lind_fs_mknod() {
         // let's create /dev/null
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let dev = makedev(&DevNo {major: 1, minor: 3});
         let path = "/null";
@@ -714,7 +714,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_multiple_open() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //try to open several files at once -- the fd's should not be overwritten
@@ -750,7 +750,7 @@ pub mod fs_tests {
     
 
     pub fn ut_lind_fs_rmdir() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let path = "/parent_dir/dir";
@@ -765,7 +765,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_stat_file_complex() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let fd = cage.open_syscall("/fooComplex", O_CREAT | O_EXCL | O_WRONLY, S_IRWXA);
 
@@ -793,7 +793,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_stat_file_mode() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let path = "/fooFileMode";
         let _fd = cage.open_syscall(path, O_CREAT | O_EXCL | O_WRONLY, S_IRWXA);
@@ -818,7 +818,7 @@ pub mod fs_tests {
 
     
     pub fn  ut_lind_fs_statfs() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let mut fsdata = FSData::default();
 
@@ -832,7 +832,7 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_fstatfs() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let mut fsdata = FSData::default();
 
@@ -854,7 +854,7 @@ pub mod fs_tests {
     
     
     pub fn ut_lind_fs_rename() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let old_path = "/test_dir";
@@ -866,7 +866,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_ftruncate() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let fd = cage.open_syscall("/ftruncate", O_CREAT | O_TRUNC | O_RDWR, S_IRWXA);
@@ -892,7 +892,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_truncate() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let path = String::from("/truncate");
@@ -919,7 +919,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_getdents() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let bufsize = 50;
@@ -951,7 +951,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_dir_chdir_getcwd() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let needed = "/subdir1\0".as_bytes().to_vec().len();
 
@@ -980,7 +980,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_exec_cloexec() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let mut uselessstatdata = StatData::default();
 
@@ -1007,7 +1007,7 @@ pub mod fs_tests {
 
     use libc::c_void;
     pub fn ut_lind_fs_shm() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let key = 31337;
         let mut shmidstruct = ShmidsStruct::default();
@@ -1041,7 +1041,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_getpid_getppid() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         
         let cage1 = interface::cagetable_getref(1);
         let pid1 = cage1.getpid_syscall();
@@ -1065,7 +1065,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_sem_fork() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let key = 31337;
         // Create a shared memory region
@@ -1114,7 +1114,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_sem_trytimed() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let key = 31337;
         // Create a shared memory region
@@ -1165,7 +1165,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_sem_test() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let key = 31337;
         // Create a shared memory region
@@ -1186,7 +1186,7 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_tmp_file_test() {
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         // Check if /tmp is there
@@ -1202,7 +1202,7 @@ pub mod fs_tests {
         lindrustfinalize();
 
         // Init again
-        lindrustinit(0, "/home/RustPOSIX/test.txt", false);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         
         // Check if /tmp is there
