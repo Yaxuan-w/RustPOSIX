@@ -322,7 +322,7 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
                 }
                 
                 // Add to FDTABLE
-                let position = 0;
+                let position = if 0 != flags & O_APPEND {filesize} else {0};
                 let allowmask = O_RDWRFLAGS | O_CLOEXEC;
                 let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
                 let _insertval = fdoption.insert(FileDescriptor::File(newfd));

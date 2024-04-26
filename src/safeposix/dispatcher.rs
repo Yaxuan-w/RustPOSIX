@@ -642,27 +642,6 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
     let _ = interface::VERBOSE.set(verbosity); //assigned to suppress unused result warning
     interface::cagetable_init();
     
-    /* A.W.:
-    *   Add initialization steps
-    */
-    
-    const MB: usize = 1024 * 1024;
-    
-    let mut vec = Vec::with_capacity(MB);
-    unsafe {
-        vec.set_len(MB);
-    }
-    let ptr:*mut u8 = vec.as_mut_ptr();
-    std::mem::forget(vec);
-    
-    let start_address = ptr as usize;
-    if let Ok(mut addr) = interface::GLOBAL_MEMORY.base_address.lock() {
-        *addr = start_address;
-    }
-
-    let buffer = vec![0u8; 5*MB];
-    
-    
     incref_root();
     incref_root();
 
@@ -715,11 +694,28 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
     interface::cagetable_insert(1, initcage);
     // make sure /tmp is clean
     cleartmp(true);
-    /* A.W.:
-    *   For TEST 
-    */
-    let load_path = "/home/RustPOSIX/test.txt";
+    
     if load_flag {
+        /* A.W.:
+        *   Add initialization steps
+        */
+        let load_path = "/home/RustPOSIX/test.txt";
+
+        const MB: usize = 1024 * 1024;
+        
+        let mut vec = Vec::with_capacity(MB);
+        unsafe {
+            vec.set_len(MB);
+        }
+        let ptr:*mut u8 = vec.as_mut_ptr();
+        std::mem::forget(vec);
+        
+        let start_address = ptr as usize;
+        if let Ok(mut addr) = interface::GLOBAL_MEMORY.base_address.lock() {
+            *addr = start_address;
+        }
+
+        let buffer = vec![0u8; 5*MB];
         let _ = load_fs(load_path, 1);
     }
     
