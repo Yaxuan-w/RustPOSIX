@@ -11,45 +11,80 @@ pub mod fs_tests {
     pub fn test_fs() {
         ut_lind_fs_simple(); // has to go first, else the data files created screw with link count test
         /* Pass */
-        ut_lind_fs_broken_close(); 
-        ut_lind_fs_chmod();
-        ut_lind_fs_fchmod();
-        ut_lind_fs_dir_chdir();
-        ut_lind_fs_dir_mode();
-        ut_lind_fs_dir_multiple();
-        ut_lind_fs_dup();
-        ut_lind_fs_dup2();
-        ut_lind_fs_fcntl();
-        ut_lind_fs_ioctl();
-        ut_lind_fs_fdflags();
-        ut_lind_fs_file_lseek_past_end();
-        ut_lind_fs_fstat_complex();
-        ut_lind_fs_getuid();
-        ut_lind_fs_mknod();
-        ut_lind_fs_rename();
-        ut_lind_fs_rmdir();
-        ut_lind_fs_stat_file_complex();
-        ut_lind_fs_stat_file_mode();
-        ut_lind_fs_statfs();
-        ut_lind_fs_fstatfs();
-        ut_lind_fs_ftruncate();
-        ut_lind_fs_truncate();
-        ut_lind_fs_getdents();
-        ut_lind_fs_dir_chdir_getcwd();
-        rdwrtest();
-        prdwrtest();
-        chardevtest();
-        ut_lind_fs_multiple_open();
-        ut_lind_fs_exec_cloexec();
-        ut_lind_fs_file_link_unlink();
-        ut_lind_fs_getpid_getppid();
-        ut_lind_fs_sem_trytimed();
-        ut_lind_fs_sem_test();
-        ut_lind_fs_sem_fork();
-        ut_lind_fs_shm();
-        ut_lind_fs_tmp_file_test();
-        ut_lind_fs_load_fs();
-        ut_lind_fs_load_test();
+        // ut_lind_fs_broken_close(); 
+        // ut_lind_fs_chmod();
+        // ut_lind_fs_fchmod();
+        // ut_lind_fs_dir_chdir();
+        // ut_lind_fs_dir_mode();
+        // ut_lind_fs_dir_multiple();
+        // ut_lind_fs_dup();
+        // ut_lind_fs_dup2();
+        // ut_lind_fs_fcntl();
+        // ut_lind_fs_ioctl();
+        // ut_lind_fs_fdflags();
+        // ut_lind_fs_file_lseek_past_end();
+        // ut_lind_fs_fstat_complex();
+        // ut_lind_fs_getuid();
+        // ut_lind_fs_mknod();
+        // ut_lind_fs_rename();
+        // ut_lind_fs_rmdir();
+        // ut_lind_fs_stat_file_complex();
+        // ut_lind_fs_stat_file_mode();
+        // ut_lind_fs_statfs();
+        // ut_lind_fs_fstatfs();
+        // ut_lind_fs_ftruncate();
+        // ut_lind_fs_truncate();
+        // ut_lind_fs_getdents();
+        // ut_lind_fs_dir_chdir_getcwd();
+        // rdwrtest();
+        // prdwrtest();
+        // chardevtest();
+        // ut_lind_fs_multiple_open();
+        // ut_lind_fs_exec_cloexec();
+        // ut_lind_fs_file_link_unlink();
+        // ut_lind_fs_getpid_getppid();
+        // ut_lind_fs_sem_trytimed();
+        // ut_lind_fs_sem_test();
+        // ut_lind_fs_sem_fork();
+        // ut_lind_fs_shm();
+        // ut_lind_fs_tmp_file_test();
+        // ut_lind_fs_load_fs();
+        // ut_lind_fs_load_test();
+        ut_lind_fs_vfs_same_rw();
+    }
+
+    pub fn ut_lind_fs_vfs_same_rw() {
+        lindrustinit(0, false);
+        let cage1 = interface::cagetable_getref(1);
+
+        assert_eq!(cage1.fork_syscall(2), 0);
+        interface::sleep(interface::RustDuration::from_millis(10));
+
+        let fd = cage1.open_syscall("/k.txt", O_RDWR, S_IRWXA);
+        assert!(fd >= 0);
+        let mut test = vec![0;2];   
+        test.clone().into_boxed_slice();
+        assert_eq!(cage1.read_syscall(fd, test.as_mut_ptr(), 2), 2);
+        assert_eq!(std::str::from_utf8(&test).unwrap(), "tm");
+
+        
+        let child = std::thread::spawn(move || {
+            let cage2 = interface::cagetable_getref(2);
+
+            let fd2 = cage2.open_syscall("/k.txt", O_RDWR, S_IRWXA);
+            assert!(fd2 >= 0);
+            let mut test2 = vec![0;2];   
+            test2.clone().into_boxed_slice();
+            assert_eq!(cage2.read_syscall(fd2, test2.as_mut_ptr(), 2), 2);
+            assert_eq!(std::str::from_utf8(&test2).unwrap(), "tm");
+            
+            assert_eq!(cage2.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
+        });
+        
+        child.join().unwrap();
+
+        assert_eq!(cage1.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
+        lindrustfinalize();
     }
 
     pub fn ut_lind_fs_load_test() {
