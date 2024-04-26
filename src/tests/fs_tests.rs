@@ -59,6 +59,7 @@ pub mod fs_tests {
         let cage2 = interface::cagetable_getref(1);
 
         let fd2 = cage2.open_syscall("/k.txt", O_RDWR, S_IRWXA);
+        panic!("Something Wrong {:?}", OPEN_FILES);
         assert!(fd2 >= 0);
         let mut test2 = vec![0;2];   
         test2.clone().into_boxed_slice();
