@@ -274,19 +274,20 @@ impl EmulatedFile {
 
         // Last block has enough space...?
         let lastblock_space = page_size - offset_pos;
-        let extendsize = length + offset - self.filesize;
-        self.filesize = length + offset;
+        let allocatespace = length + offset - lastblock_space;
 
         if self.memory_block.len() == 0 {
             // Initialization file memory
             self.filesize = length;
             let allocated = allocate(length);
             self.memory_block.extend(allocated.iter().cloned());
-        } else if lastblock_space < extendsize {
+        } else if allocatespace > 0 {
             // If need extend
+            let extendsize = length + offset - lastblock_space - self.filesize;
+            self.filesize = length + offset;
             let extendblock = allocate(extendsize);
             self.memory_block.extend(extendblock.iter().cloned());
-        }
+        } 
         
         let mut remain_len = length;
         for (i, &index) in self.memory_block.iter().enumerate() {

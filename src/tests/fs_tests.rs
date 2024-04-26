@@ -57,7 +57,7 @@ pub mod fs_tests {
         lindrustinit(0, false);
 
         let cage2 = interface::cagetable_getref(1);
-
+        panic!("Something wrong{:?}", FILEOBJECTTABLE);
         let fd2 = cage2.open_syscall("/k.txt", O_RDWR, S_IRWXA);
         assert!(fd2 >= 0);
         let mut test2 = vec![0;2];   
