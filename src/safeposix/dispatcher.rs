@@ -718,7 +718,7 @@ pub extern "C" fn lindrustinit(verbosity: isize) {
     /* A.W.:
     *   For TEST 
     */
-    load_fs("/home/RustPOSIX/test.txt", 1);
+    let _ = load_fs("/home/RustPOSIX/test.txt", 1);
 }
 
 #[no_mangle]
