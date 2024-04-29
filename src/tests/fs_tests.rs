@@ -54,10 +54,13 @@ pub mod fs_tests {
     }
 
     pub fn ut_lind_fs_vfs_same_rw() {
+        // Change to the fork to test first --> purpose: if base addr is same?
         lindrustinit(0, false);
 
+        let start_addr = *interface::GLOBAL_MEMORY.base_address.lock().unwrap(); 
+
         let cage2 = interface::cagetable_getref(1);
-        panic!("Something wrong{:?}", OPEN_FILES);
+        // panic!("Something wrong{:?}", OPEN_FILES);
         let fd2 = cage2.open_syscall("/k.txt", O_RDWR, S_IRWXA);
         assert!(fd2 >= 0);
         let mut test2 = vec![0;2];   
@@ -71,6 +74,9 @@ pub mod fs_tests {
         assert_eq!(cage2.write_syscall(fd2, str2cbuf("hello there!"), 12), 12);
         // assert_eq!(cage2.write_syscall(fd2, write_test, 12), 12);
         // panic!("Something wrong{:?}", interface::GLOBAL_MEMORY);
+
+        let end_addr = *interface::GLOBAL_MEMORY.base_address.lock().unwrap();
+        assert_ne!(start_addr, end_addr);
         
         assert_eq!(cage2.lseek_syscall(fd2, 0, SEEK_SET), 0);
         let mut read_buf2_0 = sizecbuf(14);
