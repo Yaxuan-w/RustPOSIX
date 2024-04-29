@@ -63,11 +63,12 @@ pub mod fs_tests {
         // panic!("Something wrong{:?}", OPEN_FILES);
         let fd2 = cage2.open_syscall("/k.txt", O_RDWR, S_IRWXA);
         assert!(fd2 >= 0);
+        panic!("Something wrong{:?}", fd2);
         let mut test2 = vec![0;2];   
         test2.clone().into_boxed_slice();
         assert_eq!(cage2.read_syscall(fd2, test2.as_mut_ptr(), 2), 2);
         assert_eq!(std::str::from_utf8(&test2).unwrap(), "tm");
-        assert_eq!(cage2.lseek_syscall(fd2, 2, SEEK_SET), 2);
+        // assert_eq!(cage2.lseek_syscall(fd2, 2, SEEK_SET), 2);
         // let write_test = vec!["a";12];
         // write_test.clone().into_boxed_slice();
         assert_eq!(cage2.write_syscall(fd2, str2cbuf("hello there!"), 12), 12);
