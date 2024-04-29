@@ -117,7 +117,7 @@ pub mod fs_tests {
         assert_eq!(cage2.lseek_syscall(fd2, 0, SEEK_SET), 0);
         let mut read_buf2_0 = sizecbuf(14);
         assert_eq!(cage2.read_syscall(fd2, read_buf2_0.as_mut_ptr(), 14), 14);
-        // assert_eq!(cbuf2str(&read_buf2_0), "tmhello there!");
+        assert_eq!(cbuf2str(&read_buf2_0), "tmhello there!");
 
         assert_eq!(cage2.lseek_syscall(fd2, 2, SEEK_SET), 2);
         let mut read_buf2_1 = sizecbuf(5);
