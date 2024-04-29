@@ -699,7 +699,7 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
         /* A.W.:
         *   Add initialization steps
         */
-        let load_path = "/home/lind/lind_project/src/safeposix-rust/test.txt";
+        let load_path = "/home/RustPOSIX/test.txt";
 
         const MB: usize = 1024 * 1024;
         
