@@ -251,6 +251,15 @@ impl EmulatedFile {
     }
 
     // Write to file from provided C-buffer
+    /* while(datatowrite) > 0:
+        start = offset % blocksize
+        end = blocksize - start
+        if end <= len(datatowrite):
+            memcpy
+            return
+        memcpy
+        update datatowrite
+    */
     pub fn writeat(&mut self, ptr: *const u8, length: usize, offset: usize) -> std::io::Result<usize> {
         let mut ptr = ptr;
         let page_size = 4096;
@@ -292,13 +301,14 @@ impl EmulatedFile {
                 continue;
             }
             // Set ptr according to the start address for this block
+            // could just jump to the start pos
             let mem_base_addr_lock = &GLOBAL_MEMORY.base_address;
             match mem_base_addr_lock.lock() {
                 Ok(mem_base_addr) => {
                     let block_start = *mem_base_addr + page_size * index;
                     // Only consider offset in the first readable block
                     let ptr_mem: *mut u8 = (block_start + if i == offset_block { offset_pos } else { 0 }) as *mut u8;
-                    // Calculate how many bytes need to be read this time
+                    // Calculate how many bytes need to be written this time
                     let bytes_to_copy = remain_len.min(page_size - if i == offset_block { offset_pos } else { 0 });
                     // Update remaining length
                     remain_len -= bytes_to_copy;
