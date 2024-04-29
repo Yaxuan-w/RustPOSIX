@@ -99,7 +99,7 @@ pub mod fs_tests {
         assert_eq!(cage.fork_syscall(2), 0);
         // Child process
         let thread_child = interface::helper_thread(move || {
-            interface::sleep(interface::RustDuration::from_millis(500));
+            // interface::sleep(interface::RustDuration::from_millis(500));
             let cage1 = interface::cagetable_getref(2);
             let fd1 = cage1.open_syscall("/k.txt", O_RDWR, S_IRWXA);
             assert_eq!(cage1.lseek_syscall(fd1, 7, SEEK_SET), 7);
@@ -120,6 +120,7 @@ pub mod fs_tests {
             assert_eq!(cage.lseek_syscall(fd, 2, SEEK_SET), 2);
             assert_eq!(cage.write_syscall(fd, str2cbuf("hello there!"), 12), 12);
 
+
             assert_eq!(cage.lseek_syscall(fd, 0, SEEK_SET), 0);
             let mut read_buf1 = sizecbuf(7);
             assert_eq!(cage.read_syscall(fd, read_buf1.as_mut_ptr(), 7), 7);
@@ -139,7 +140,6 @@ pub mod fs_tests {
         let mut test = vec![0;2];   
         test.clone().into_boxed_slice();
         assert_eq!(cage.read_syscall(fd, test.as_mut_ptr(), 2), 2);
-        assert_eq!(std::str::from_utf8(&test).unwrap(), "tm");
         assert_eq!(std::str::from_utf8(&test).unwrap(), "tm");
         assert_eq!(cage.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
 
