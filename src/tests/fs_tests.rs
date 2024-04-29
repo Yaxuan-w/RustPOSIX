@@ -62,7 +62,7 @@ pub mod fs_tests {
         assert_eq!(cage.fork_syscall(2), 0);
         // Child process
         let thread_child = interface::helper_thread(move || {
-            interface::sleep(interface::RustDuration::from_millis(40));
+            interface::sleep(interface::RustDuration::from_millis(500));
             let cage1 = interface::cagetable_getref(2);
             let fd1 = cage1.open_syscall("/foobar", O_RDWR, S_IRWXA);
             assert_eq!(cage1.write_syscall(fd1, str2cbuf(" world"), 6), 6);
