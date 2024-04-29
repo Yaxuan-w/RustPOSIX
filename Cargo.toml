@@ -23,6 +23,6 @@ parking_lot = "0.12"
 name = "lind_fs_utils"
 path = "src/tools/fs_utils.rs"
 
-[profile.release]
+[profile.dev]
 debug = true
 
