@@ -92,46 +92,39 @@ pub mod fs_tests {
 
 
     pub fn ut_lind_fs_vfs_same_rw() {
-        // Change to the fork to test first --> purpose: if base addr is same?
         lindrustinit(0, false);
-
-        let start_addr = *interface::GLOBAL_MEMORY.base_address.lock().unwrap(); 
-
-        let cage2 = interface::cagetable_getref(1);
-        // panic!("Something wrong{:?}", OPEN_FILES);
-        let fd2 = cage2.open_syscall("/k.txt", O_RDWR, S_IRWXA);
-        assert!(fd2 >= 0);
-        let mut test2 = vec![0;2];   
-        test2.clone().into_boxed_slice();
-        assert_eq!(cage2.read_syscall(fd2, test2.as_mut_ptr(), 2), 2);
-        assert_eq!(std::str::from_utf8(&test2).unwrap(), "tm");
-        // assert_eq!(cage2.lseek_syscall(fd2, 2, SEEK_SET), 2);
-        // let write_test = vec!["a";12];
-        // write_test.clone().into_boxed_slice();
-        assert_eq!(cage2.write_syscall(fd2, str2cbuf("hello there!"), 12), 12);
-        // assert_eq!(cage2.write_syscall(fd2, write_test, 12), 12);
-
-        let end_addr = *interface::GLOBAL_MEMORY.base_address.lock().unwrap();
-        assert_eq!(start_addr, end_addr);
+        let cage = interface::cagetable_getref(1);
         
-        assert_eq!(cage2.lseek_syscall(fd2, 0, SEEK_SET), 0);
-        let mut read_buf2_0 = sizecbuf(14);
-        assert_eq!(cage2.read_syscall(fd2, read_buf2_0.as_mut_ptr(), 14), 14);
-        assert_eq!(cbuf2str(&read_buf2_0), "tmhello there!");
+        // Fork child process
+        assert_eq!(cage.fork_syscall(2), 0);
+        // Child process
+        let thread_child = interface::helper_thread(move || {
+            interface::sleep(interface::RustDuration::from_millis(500));
+            let cage1 = interface::cagetable_getref(2);
+            let fd1 = cage1.open_syscall("/k.txt", O_RDWR, S_IRWXA);
+            assert_eq!(cage1.lseek_syscall(fd1, 7, SEEK_SET), 7);
+            assert_eq!(cage1.write_syscall(fd1, str2cbuf(" world"), 6), 6);
+            assert_eq!(cage1.lseek_syscall(fd1, 0, SEEK_SET), 0);
+            let mut read_buf2 = sizecbuf(14);
+            assert_eq!(cage1.read_syscall(fd1, read_buf2.as_mut_ptr(), 14), 14);
+            assert_eq!(cbuf2str(&read_buf2), "tmhello world!");
+            cage1.exit_syscall(EXIT_SUCCESS);
+        });
+        //Parent processes
+        let thread_parent = interface::helper_thread(move || {
+            let fd = cage.open_syscall("/k.txt", O_RDWR, S_IRWXA);
+            assert!(fd >= 0);
+            assert_eq!(cage.lseek_syscall(fd, 2, SEEK_SET), 2);
+            assert_eq!(cage.write_syscall(fd, str2cbuf("hello there!"), 12), 12);
 
-        assert_eq!(cage2.lseek_syscall(fd2, 2, SEEK_SET), 2);
-        let mut read_buf2_1 = sizecbuf(5);
-        assert_eq!(cage2.read_syscall(fd2, read_buf2_1.as_mut_ptr(), 5), 5);
-        assert_eq!(cbuf2str(&read_buf2_1), "hello");
-
-        assert_eq!(cage2.write_syscall(fd2, str2cbuf(" world"), 6), 6);
-
-        assert_eq!(cage2.lseek_syscall(fd2, 0, SEEK_SET), 0);
-        let mut read_buf2 = sizecbuf(14);
-        assert_eq!(cage2.read_syscall(fd2, read_buf2.as_mut_ptr(), 14), 14);
-        assert_eq!(cbuf2str(&read_buf2), "tmhello world!");
-        
-        assert_eq!(cage2.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
+            assert_eq!(cage.lseek_syscall(fd, 0, SEEK_SET), 0);
+            let mut read_buf1 = sizecbuf(5);
+            assert_eq!(cage.read_syscall(fd, read_buf1.as_mut_ptr(), 7), 7);
+            assert_eq!(cbuf2str(&read_buf1), "tmhello");
+            cage.exit_syscall(EXIT_SUCCESS);
+        });
+        thread_child.join().unwrap();
+        thread_parent.join().unwrap();
         lindrustfinalize();
     }
 
