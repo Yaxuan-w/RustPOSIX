@@ -50,8 +50,45 @@ pub mod fs_tests {
         // ut_lind_fs_tmp_file_test();
         // ut_lind_fs_load_fs();
         // ut_lind_fs_load_test();
-        ut_lind_fs_vfs_same_rw();
+        // ut_lind_fs_vfs_same_rw();
+        ut_lind_fs_vfs_fork();
     }
+
+    pub fn ut_lind_fs_vfs_fork() {
+        lindrustinit(0, false);
+        let cage = interface::cagetable_getref(1);
+        
+        // Fork child process
+        assert_eq!(cage.fork_syscall(2), 0);
+        // Child process
+        let thread_child = interface::helper_thread(move || {
+            interface::sleep(interface::RustDuration::from_millis(40));
+            let cage1 = interface::cagetable_getref(2);
+            let fd1 = cage1.open_syscall("/foobar", O_RDWR, S_IRWXA);
+            assert_eq!(cage1.write_syscall(fd1, str2cbuf(" world"), 6), 6);
+            assert_eq!(cage1.lseek_syscall(fd1, 0, SEEK_SET), 0);
+            let mut read_buf2 = sizecbuf(12);
+            assert_eq!(cage1.read_syscall(fd1, read_buf2.as_mut_ptr(), 12), 12);
+            assert_eq!(cbuf2str(&read_buf2), "hello world!");
+            cage1.exit_syscall(EXIT_SUCCESS);
+        });
+        //Parent processes
+        let thread_parent = interface::helper_thread(move || {
+            let fd = cage.open_syscall("/foobar", O_CREAT | O_RDWR, S_IRWXA);
+            assert!(fd >= 0);
+            assert_eq!(cage.write_syscall(fd, str2cbuf("hello there!"), 12), 12);
+
+            assert_eq!(cage.lseek_syscall(fd, 0, SEEK_SET), 0);
+            let mut read_buf1 = sizecbuf(5);
+            assert_eq!(cage.read_syscall(fd, read_buf1.as_mut_ptr(), 5), 5);
+            assert_eq!(cbuf2str(&read_buf1), "hello");
+            cage.exit_syscall(EXIT_SUCCESS);
+        });
+        thread_child.join().unwrap();
+        thread_parent.join().unwrap();
+        lindrustfinalize();
+    }
+
 
     pub fn ut_lind_fs_vfs_same_rw() {
         // Change to the fork to test first --> purpose: if base addr is same?
@@ -63,7 +100,6 @@ pub mod fs_tests {
         // panic!("Something wrong{:?}", OPEN_FILES);
         let fd2 = cage2.open_syscall("/k.txt", O_RDWR, S_IRWXA);
         assert!(fd2 >= 0);
-        panic!("Something wrong{:?}", fd2);
         let mut test2 = vec![0;2];   
         test2.clone().into_boxed_slice();
         assert_eq!(cage2.read_syscall(fd2, test2.as_mut_ptr(), 2), 2);
