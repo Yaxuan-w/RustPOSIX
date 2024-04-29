@@ -101,13 +101,13 @@ pub mod fs_tests {
         let thread_child = interface::helper_thread(move || {
             interface::sleep(interface::RustDuration::from_millis(500));
             let cage1 = interface::cagetable_getref(2);
-            // let fd1 = cage1.open_syscall("/k.txt", O_RDWR, S_IRWXA);
-            // assert_eq!(cage1.lseek_syscall(fd1, 7, SEEK_SET), 7);
-            // assert_eq!(cage1.write_syscall(fd1, str2cbuf(" world"), 6), 6);
-            // assert_eq!(cage1.lseek_syscall(fd1, 0, SEEK_SET), 0);
-            // let mut read_buf2 = sizecbuf(14);
-            // assert_eq!(cage1.read_syscall(fd1, read_buf2.as_mut_ptr(), 14), 14);
-            // assert_eq!(cbuf2str(&read_buf2), "tmhello world!");
+            let fd1 = cage1.open_syscall("/k.txt", O_RDWR, S_IRWXA);
+            assert_eq!(cage1.lseek_syscall(fd1, 7, SEEK_SET), 7);
+            assert_eq!(cage1.write_syscall(fd1, str2cbuf(" world"), 6), 6);
+            assert_eq!(cage1.lseek_syscall(fd1, 0, SEEK_SET), 0);
+            let mut read_buf2 = sizecbuf(14);
+            assert_eq!(cage1.read_syscall(fd1, read_buf2.as_mut_ptr(), 14), 14);
+            assert_eq!(cbuf2str(&read_buf2), "tmhello world!");
             cage1.exit_syscall(EXIT_SUCCESS);
         });
         //Parent processes
@@ -136,6 +136,7 @@ pub mod fs_tests {
         let mut test = vec![0;2];   
         test.clone().into_boxed_slice();
         assert_eq!(cage.read_syscall(fd, test.as_mut_ptr(), 2), 2);
+        assert_eq!(std::str::from_utf8(&test).unwrap(), "tm");
         assert_eq!(std::str::from_utf8(&test).unwrap(), "tm");
         assert_eq!(cage.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
 
