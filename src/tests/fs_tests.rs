@@ -50,7 +50,7 @@ pub mod fs_tests {
         ut_lind_fs_tmp_file_test();
         ut_lind_fs_load_fs();
         ut_lind_fs_load_test();
-        // ut_lind_fs_vfs_same_rw();
+        ut_lind_fs_vfs_same_rw();
         ut_lind_fs_vfs_fork();
     }
 
