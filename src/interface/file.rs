@@ -296,9 +296,6 @@ impl EmulatedFile {
         }
         
         let mut remain_len = length;
-        for index in self.memory_block.iter().skip(offset_block) {
-
-        }
         
         for (i, &index) in self.memory_block.iter().enumerate() {
             if i < offset_block {
