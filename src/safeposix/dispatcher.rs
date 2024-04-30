@@ -701,7 +701,7 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
         */
         let load_path = "/home/RustPOSIX/test.txt";
 
-        const MB: usize = 1024 * 1024;
+        const MB: usize = 4 * 1024 * 1024 * 1024;
         
         let mut vec = Vec::with_capacity(MB);
         unsafe {

@@ -80,7 +80,7 @@ pub struct Memory {
 pub static GLOBAL_MEMORY: RustLazyGlobal<Memory> = RustLazyGlobal::new(|| {
     let page_size = 4096;
     // For test purpose
-    let size = 1024 * 1024;
+    let size = 4 * 1024 * 1024 * 1024;
     
     let num_pages = if size % page_size == 0 {
         size / page_size
