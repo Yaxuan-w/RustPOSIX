@@ -776,6 +776,7 @@ impl Cage {
                             //we need to pad the file with blank bytes if we are at a position past the end of the file!
                             if blankbytecount > 0 {
                                 if let Ok(byteswritten) = fileobject.zerofill_at(filesize, blankbytecount as usize) {
+                                    panic!("Something Wrong: {:?}", position);
                                     if byteswritten != blankbytecount as usize {
                                         panic!("Write of blank bytes for write failed!");
                                     }
@@ -869,6 +870,7 @@ impl Cage {
                         Inode::File(ref mut normalfile_inode_obj) => {
                             let position = offset as usize;
                             let filesize = normalfile_inode_obj.size;
+                            /* Change the logic */
                             let blankbytecount = offset - filesize as isize;
 
                             let mut fileobject = FILEOBJECTTABLE.get_mut(&normalfile_filedesc_obj.inode).unwrap();
