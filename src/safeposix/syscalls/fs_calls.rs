@@ -775,7 +775,7 @@ impl Cage {
 
                             //we need to pad the file with blank bytes if we are at a position past the end of the file!
                             if blankbytecount > 0 {
-                                panic!("Something Wrong: {:?}", position);
+                                panic!("Something Wrong: {:?}", blankbytecount);
                                 if let Ok(byteswritten) = fileobject.zerofill_at(filesize, blankbytecount as usize) {
                                     if byteswritten != blankbytecount as usize {
                                         panic!("Write of blank bytes for write failed!");
