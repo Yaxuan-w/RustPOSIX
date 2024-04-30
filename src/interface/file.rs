@@ -14,6 +14,7 @@ pub use std::ffi::CStr as RustCStr;
 pub use std::io::{SeekFrom, Seek, Read, Write, BufReader, BufWriter, Result};
 pub use std::sync::{LazyLock as RustLazyGlobal, Mutex as RustMutex};
 use std::ptr::copy;
+use base64::decode;
 
 use std::os::unix::io::{AsRawFd, RawFd};
 // use libc::{mmap, mremap, munmap, PROT_READ, PROT_WRITE, MAP_SHARED, MREMAP_MAYMOVE, off64_t};
