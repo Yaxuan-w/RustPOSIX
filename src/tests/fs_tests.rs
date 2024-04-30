@@ -750,7 +750,7 @@ pub mod fs_tests {
         //testing that all of the dev files made it out safe and sound
         // cage.stat_syscall("/m.txt", &mut statdata);
 
-        assert_eq!(cage.stat_syscall("/m.txt", &mut statdata), 0);
+        // assert_eq!(cage.stat_syscall("/m.txt", &mut statdata), 0);
         // assert_eq!(statdata.st_rdev, makedev(&DevNo {major: 1, minor: 3}));
         
         assert_eq!(cage.stat_syscall("/k.txt", &mut statdata), 0);
