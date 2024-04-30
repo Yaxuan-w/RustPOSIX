@@ -699,7 +699,8 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
         /* A.W.:
         *   Add initialization steps
         */
-        let load_path = "/home/RustPOSIX/test.txt";
+        let load_path = "/home/lind/lind_project/src/safeposix-rust/test.txt";
+        let relative_path = "/home/lind/lind_project/src/safeposix-rust/hello.nexe";
 
         const MB: usize = 4 * 1024 * 1024 * 1024;
         
@@ -716,7 +717,7 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
         }
 
         let buffer = vec![0u8; 5*MB];
-        let _ = load_fs(load_path, 1);
+        let _ = load_fs(load_path,relative_path, 1);
     }
     
 }
