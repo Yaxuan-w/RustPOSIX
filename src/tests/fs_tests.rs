@@ -100,7 +100,7 @@ pub mod fs_tests {
         assert_eq!(cage.fork_syscall(2), 0);
         // Child process
         let thread_child = interface::helper_thread(move || {
-            interface::sleep(interface::RustDuration::from_millis(500));
+            interface::sleep(interface::RustDuration::from_millis(25000));
             let cage1 = interface::cagetable_getref(2);
             let fd1 = cage1.open_syscall("/k.txt", O_RDWR, S_IRWXA);
             assert_eq!(cage1.lseek_syscall(fd1, 7, SEEK_SET), 7);
