@@ -700,7 +700,7 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
         *   Add initialization steps
         */
         let load_path = "/home/lind/lind_project/src/safeposix-rust/test.txt";
-        let relative_path = "/home/lind/lind_project/src/safeposix-rust/hello.nexe";
+        let relative_path = "/home/lind/lind_project/src/safeposix-rust";
 
         const MB: usize = 4 * 1024 * 1024 * 1024;
         
