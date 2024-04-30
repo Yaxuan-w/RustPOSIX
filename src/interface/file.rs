@@ -297,11 +297,8 @@ impl EmulatedFile {
         
         let mut remain_len = length;
         
-        for (i, &index) in self.memory_block.iter().enumerate() {
-            if i < offset_block {
-                // Skip blocks before starting
-                continue;
-            }
+        let mut i = 0;
+        for &index in self.memory_block.iter().skip(offset_block) {
             // Set ptr according to the start address for this block
             // could just jump to the start pos
             let mem_base_addr_lock = &GLOBAL_MEMORY.base_address;
@@ -309,9 +306,9 @@ impl EmulatedFile {
                 Ok(mem_base_addr) => {
                     let block_start = *mem_base_addr + page_size * index;
                     // Only consider offset in the first readable block
-                    let ptr_mem: *mut u8 = (block_start + if i == offset_block { offset_pos } else { 0 }) as *mut u8;
+                    let ptr_mem: *mut u8 = (block_start + if i == 0 { offset_pos } else { 0 }) as *mut u8;
                     // Calculate how many bytes need to be written this time
-                    let bytes_to_copy = remain_len.min(page_size - if i == offset_block { offset_pos } else { 0 });
+                    let bytes_to_copy = remain_len.min(page_size - if i == 0 { offset_pos } else { 0 });
                     // Update remaining length
                     remain_len -= bytes_to_copy;
                     
@@ -325,7 +322,7 @@ impl EmulatedFile {
                     panic!("Failed to acquire the lock in writeat: {:?}", e);
                 }
             }
-            
+            i = i + 1;
         }
         
         Ok(length - remain_len)
