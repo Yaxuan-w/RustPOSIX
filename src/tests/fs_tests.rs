@@ -83,7 +83,7 @@ pub mod fs_tests {
             let mut read_buf1 = sizecbuf(5);
             assert_eq!(cage.read_syscall(fd, read_buf1.as_mut_ptr(), 5), 5);
             assert_eq!(cbuf2str(&read_buf1), "hello");
-            interface::sleep(interface::RustDuration::from_millis(1000));
+            // interface::sleep(interface::RustDuration::from_millis(1000));
             cage.exit_syscall(EXIT_SUCCESS);
         });
         thread_child.join().unwrap();
