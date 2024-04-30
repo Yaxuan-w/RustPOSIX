@@ -228,13 +228,6 @@ pub fn load_fs(input_path: &str, cageid: u64) -> std::io::Result<()> {
     /* 
     *   Loading File is consisted by two parts: (filename filesize filepath;filename2 filesize2 filepath2;...)"not whitespace between size
     *   and next filename" followed by contents
-    *   [Consider remove the cageid]
-    *       - we don't need to hook with cage...?
-    *
-    *   Consider using open_syscall() for reference, because we need to handle path
-    *   1. Get the file list with their size
-    *   2. Read from local file into EmulatedFile
-    *   3. Hook EmulatedFile with Inode 
     */
     // 1
     // Open the loading file

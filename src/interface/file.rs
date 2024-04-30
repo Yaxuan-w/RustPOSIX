@@ -251,14 +251,15 @@ impl EmulatedFile {
     }
 
     // Write to file from provided C-buffer
-    /* while(datatowrite) > 0:
-        start = offset % blocksize
-        end = blocksize - start
-        if end <= len(datatowrite):
+    /* Jmp to the start block
+        while(datatowrite) > 0:
+            start = offset % blocksize
+            end = blocksize - start
+            if end <= len(datatowrite):
+                memcpy
+                return
             memcpy
-            return
-        memcpy
-        update datatowrite
+            update datatowrite
     */
     pub fn writeat(&mut self, ptr: *const u8, length: usize, offset: usize) -> std::io::Result<usize> {
         let mut ptr = ptr;
@@ -295,6 +296,10 @@ impl EmulatedFile {
         }
         
         let mut remain_len = length;
+        for index in self.memory_block.iter().skip(offset_block) {
+
+        }
+        
         for (i, &index) in self.memory_block.iter().enumerate() {
             if i < offset_block {
                 // Skip blocks before starting
