@@ -49,8 +49,8 @@ pub mod fs_tests {
         // ut_lind_fs_shm();
         // ut_lind_fs_tmp_file_test();
         // ut_lind_fs_load_fs();
-        // ut_lind_fs_load_test();
-        ut_lind_fs_vfs_same_rw();
+        ut_lind_fs_load_test();
+        // ut_lind_fs_vfs_same_rw();
         // ut_lind_fs_vfs_fork();
     }
 
@@ -148,6 +148,14 @@ pub mod fs_tests {
         test.clone().into_boxed_slice();
         assert_eq!(cage.read_syscall(fd, test.as_mut_ptr(), 2), 2);
         assert_eq!(std::str::from_utf8(&test).unwrap(), "tm");
+        assert_eq!(cage.lseek_syscall(fd, 2, SEEK_SET), 2);
+        assert_eq!(cage.write_syscall(fd, str2cbuf("hello there!"), 12), 12);
+
+
+        assert_eq!(cage.lseek_syscall(fd, 0, SEEK_SET), 0);
+        let mut read_buf1 = sizecbuf(7);
+        assert_eq!(cage.read_syscall(fd, read_buf1.as_mut_ptr(), 7), 7);
+        assert_eq!(cbuf2str(&read_buf1), "tmhello");
         assert_eq!(cage.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
 
         lindrustfinalize();
