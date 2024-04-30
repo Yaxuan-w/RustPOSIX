@@ -793,7 +793,6 @@ impl Cage {
                                     normalfile_inode_obj.size = newposition;
                                     drop(inodeobj);
                                     drop(fileobject);
-                                    // log_metadata(&FS_METADATA, normalfile_filedesc_obj.inode);
                                 } //update file size if necessary
                                 
                                 byteswritten as i32
@@ -900,8 +899,7 @@ impl Cage {
                             if newposition > filesize {
                                normalfile_inode_obj.size = newposition;
                                drop(fileobject);
-                               drop(inodeobj);
-                            //    log_metadata(&FS_METADATA, normalfile_filedesc_obj.inode);                            
+                               drop(inodeobj);                           
                             } //update file size if necessary
 
                             retval
@@ -1328,21 +1326,14 @@ impl Cage {
                             if normalfile_inode_obj.refcount == 0 {
                                 if normalfile_inode_obj.linkcount == 0 {
                                     drop(inodeobj);
-                                    /* A.W.:
-                                    *   Replace with IMFS 
-                                    */
                                     let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
                                     let _ = emulatedfile.shrink(0);
                                     //removing the file from the entire filesystem (interface, metadata, and object table)
                                     FS_METADATA.inodetable.remove(&inodenum);
                                     let _ = emulatedfile.close();
-                                    // let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
-                                    // interface::removefile(sysfilename).unwrap();
                                 } else {
                                     drop(inodeobj);
                                 }
-                                // log_metadata(&FS_METADATA, inodenum);
-                                // FILEOBJECTTABLE.remove(&inodenum).unwrap().1.close().unwrap();
                             }
                         },
                         Inode::Dir(ref mut dir_inode_obj) => {
@@ -1357,7 +1348,6 @@ impl Cage {
                                 //removing the file from the metadata 
                                 FS_METADATA.inodetable.remove(&inodenum);
                                 drop(inodeobj);
-                                // log_metadata(&FS_METADATA, inodenum);     
                             } 
                         },
                         Inode::CharDev(ref mut char_inode_obj) => {
@@ -1375,7 +1365,6 @@ impl Cage {
                             }  else {
                                 drop(inodeobj);
                             }
-                            // log_metadata(&FS_METADATA, inodenum);
                         },
                         Inode::Socket(_) => { panic!("close(): Socket inode found on a filedesc fd.") }
                     }
@@ -1539,7 +1528,6 @@ impl Cage {
     
     pub fn _chmod_helper(inodenum: usize, mode: u32) {
          let mut thisinode = FS_METADATA.inodetable.get_mut(&inodenum).unwrap();
-        //  let mut _log = true;
          if mode & (S_IRWXA|(S_FILETYPEFLAGS as u32)) == mode {
             match *thisinode {
                 Inode::File(ref mut general_inode) => {
@@ -1550,14 +1538,12 @@ impl Cage {
                 }   
                 Inode::Socket(ref mut sock_inode) => {
                     sock_inode.mode = (sock_inode.mode &!S_IRWXA) | mode;
-                    // log = false;
                 }
                 Inode::Dir(ref mut dir_inode) => {
                     dir_inode.mode = (dir_inode.mode &!S_IRWXA) | mode;
                 }
             }
             drop(thisinode);
-            // if log { log_metadata(&FS_METADATA, inodenum) }; 
          }
     }
 
@@ -1774,10 +1760,7 @@ impl Cage {
                         if removal_result != 0 {return removal_result;}
 
                         // remove entry of corresponding inodenum from inodetable
-                        if remove_inode { FS_METADATA.inodetable.remove(&inodenum).unwrap(); } 
-
-                        // log_metadata(&FS_METADATA, parent_inodenum);
-                        // log_metadata(&FS_METADATA, inodenum);       
+                        if remove_inode { FS_METADATA.inodetable.remove(&inodenum).unwrap(); }     
                         0 // success
                     }
                     _ => { syscall_error(Errno::ENOTDIR, "rmdir", "Path is not a directory") }
@@ -1819,8 +1802,7 @@ impl Cage {
 
                     // remove entry of old path from filename-inode dict
                     parent_dir.filename_to_inode_dict.remove(&true_oldpath.file_name().unwrap().to_str().unwrap().to_string());
-                    drop(pardir_inodeobj);
-                    // log_metadata(&FS_METADATA, parent_inodenum);       
+                    drop(pardir_inodeobj);     
                 }
                 NET_METADATA.domsock_paths.insert(true_newpath);
                 NET_METADATA.domsock_paths.remove(&true_oldpath);
@@ -1887,7 +1869,6 @@ impl Cage {
                 normalfile_inode_obj.size = ulength;
 
                 drop(inodeobj);
-                // log_metadata(&FS_METADATA, inodenum);
                 0 // truncating has succeeded!
             }
             Inode::CharDev(_) => {

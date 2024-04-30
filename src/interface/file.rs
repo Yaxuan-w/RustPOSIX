@@ -41,21 +41,6 @@ pub fn listfiles() -> Vec<String> {
     return names;
 }
 
-// pub fn removefile(filename: String) -> std::io::Result<()> {
-//     let openfiles = &OPEN_FILES;
-
-//     if openfiles.contains(&filename) {
-//         panic!("FileInUse");
-//     }
-
-//     let path: RustPathBuf = [".".to_string(), filename].iter().collect();
-
-//     let absolute_filename = canonicalize(&path)?; //will return an error if the file does not exist
-
-//     fs::remove_file(absolute_filename)?;
-
-//     Ok(())
-// }
 fn is_allowed_char(c: char) -> bool{
     char::is_alphanumeric(c) || c == '.'
 }
@@ -214,20 +199,17 @@ impl EmulatedFile {
             (offset / page_size, offset % page_size)
         };
         let mut remain_len = len;
-        for (i, &index) in self.memory_block.iter().enumerate() {
-            if i < offset_block {
-                // Skip blocks before starting
-                continue;
-            }
+        let mut i = 0;
+        for &index in self.memory_block.iter().skip(offset_block) {
             let mem_base_addr_lock = &GLOBAL_MEMORY.base_address;
             match mem_base_addr_lock.lock() {
                 Ok(mem_base_addr) => {
                     // Set ptr according to the start address for this block
                     let block_start = *mem_base_addr + page_size * index;
                     // Only consider offset in the first readable block
-                    let ptr_mem: *mut u8 = (block_start + if i == offset_block { offset_pos } else { 0 }) as *mut u8;
+                    let ptr_mem: *mut u8 = (block_start + if i == 0 { offset_pos } else { 0 }) as *mut u8;
                     // Calculate how many bytes need to be read this time
-                    let bytes_to_copy = remain_len.min(page_size - if i == offset_block { offset_pos } else { 0 });
+                    let bytes_to_copy = remain_len.min(page_size - if i == 0 { offset_pos } else { 0 });
                     // Update remaining length
                     remain_len -= bytes_to_copy;
                     
@@ -244,6 +226,7 @@ impl EmulatedFile {
                     panic!("Failed to acquire the lock in readat: {:?}", e);
                 }
             }
+            i = i + 1;
         }
         
         Ok(len - remain_len)
@@ -251,16 +234,6 @@ impl EmulatedFile {
     }
 
     // Write to file from provided C-buffer
-    /* Jmp to the start block
-        while(datatowrite) > 0:
-            start = offset % blocksize
-            end = blocksize - start
-            if end <= len(datatowrite):
-                memcpy
-                return
-            memcpy
-            update datatowrite
-    */
     pub fn writeat(&mut self, ptr: *const u8, length: usize, offset: usize) -> std::io::Result<usize> {
         let mut ptr = ptr;
         let page_size = 4096;
