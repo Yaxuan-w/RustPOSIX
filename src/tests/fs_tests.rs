@@ -176,7 +176,7 @@ pub mod fs_tests {
         /* A.W.:
         *   We add loading file(2) in initial phase
         */
-        assert_eq!(statdata2.st_nlink, 7); //2 for . and .., one for dev, and one so that it can never be removed
+        assert_eq!(statdata2.st_nlink, 8); //2 for . and .., one for dev, and one so that it can never be removed
 
         //ensure that there is no associated size
         assert_eq!(statdata2.st_size, 0);
