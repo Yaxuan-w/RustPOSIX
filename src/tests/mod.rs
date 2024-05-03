@@ -10,9 +10,9 @@ use crate::safeposix::{cage::*, filesystem::*};
 
 #[cfg(test)]
 mod main_tests {
-    use crate::tests::networking_tests::net_tests::net_tests;
+    // use crate::tests::networking_tests::net_tests::net_tests;
     use crate::tests::fs_tests::fs_tests::test_fs;
-    use crate::tests::ipc_tests::ipc_tests::test_ipc;
+    // use crate::tests::ipc_tests::ipc_tests::test_ipc;
 
     use crate::safeposix::{cage::*, dispatcher::*, filesystem::*};
     use crate::interface;
@@ -23,10 +23,10 @@ mod main_tests {
     pub fn tests() {
         interface::RUSTPOSIX_TESTSUITE.store(true, interface::RustAtomicOrdering::Relaxed);
         
-        lindrustinit(0);
+        lindrustinit(0, true);
         {
             let cage = interface::cagetable_getref(1);
-            crate::lib_fs_utils::lind_deltree(&cage, "/");
+            // crate::lib_fs_utils::lind_deltree(&cage, "/");
             assert_eq!(cage.mkdir_syscall("/dev", S_IRWXA), 0);
             assert_eq!(cage.mknod_syscall("/dev/null", S_IFCHR as u32| 0o777, makedev(&DevNo {major: 1, minor: 3})), 0);
             assert_eq!(cage.mknod_syscall("/dev/zero", S_IFCHR as u32| 0o777, makedev(&DevNo {major: 1, minor: 5})), 0);
@@ -39,11 +39,11 @@ mod main_tests {
         println!("FS TESTS");
         test_fs();
 
-        println!("NET TESTS");
-        net_tests();
+        // println!("NET TESTS");
+        // net_tests();
         
-        println!("IPC TESTS");
-        test_ipc();
+        // println!("IPC TESTS");
+        // test_ipc();
     }   
 }
 

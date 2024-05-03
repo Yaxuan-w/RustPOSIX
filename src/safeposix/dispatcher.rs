@@ -113,7 +113,8 @@ const SYNC_FILE_RANGE: i32 = 164;
 
 use crate::interface;
 use super::cage::*;
-use super::filesystem::{FS_METADATA, load_fs, incref_root, remove_domain_sock, persist_metadata, LOGMAP, LOGFILENAME, FilesystemMetadata};
+// use super::filesystem::{FS_METADATA, load_fs, incref_root, remove_domain_sock, persist_metadata, LOGMAP, LOGFILENAME, FilesystemMetadata};
+use super::filesystem::{FS_METADATA, load_fs, incref_root, remove_domain_sock, LOGFILENAME, FilesystemMetadata};
 use super::shm::{SHM_METADATA};
 use super::net::{NET_METADATA};
 use crate::interface::errnos::*;
@@ -197,15 +198,15 @@ pub extern "C" fn dispatcher(cageid: u64, callnum: i32, arg1: Arg, arg2: Arg, ar
         CHDIR_SYSCALL => {
             check_and_dispatch!(cage.chdir_syscall, interface::get_cstr(arg1))
         }
-        FSYNC_SYSCALL => {
-            check_and_dispatch!(cage.fsync_syscall, interface::get_int(arg1))
-        }
-        FDATASYNC_SYSCALL => {
-            check_and_dispatch!(cage.fdatasync_syscall, interface::get_int(arg1))
-        }
-        SYNC_FILE_RANGE =>{
-            check_and_dispatch!(cage.sync_file_range_syscall, interface::get_int(arg1), interface::get_isize(arg2), interface::get_isize(arg3), interface::get_uint(arg4))
-        }
+        // FSYNC_SYSCALL => {
+        //     check_and_dispatch!(cage.fsync_syscall, interface::get_int(arg1))
+        // }
+        // FDATASYNC_SYSCALL => {
+        //     check_and_dispatch!(cage.fdatasync_syscall, interface::get_int(arg1))
+        // }
+        // SYNC_FILE_RANGE =>{
+        //     check_and_dispatch!(cage.sync_file_range_syscall, interface::get_int(arg1), interface::get_isize(arg2), interface::get_isize(arg3), interface::get_uint(arg4))
+        // }
         FCHDIR_SYSCALL => {
             check_and_dispatch!(cage.fchdir_syscall, interface::get_int(arg1))
         }
@@ -233,9 +234,9 @@ pub extern "C" fn dispatcher(cageid: u64, callnum: i32, arg1: Arg, arg2: Arg, ar
         FSTATFS_SYSCALL => {
             check_and_dispatch!(cage.fstatfs_syscall, interface::get_int(arg1), interface::get_fsdatastruct(arg2))
         }
-        MMAP_SYSCALL => {
-            check_and_dispatch!(cage.mmap_syscall, interface::get_mutcbuf(arg1), interface::get_usize(arg2), interface::get_int(arg3), interface::get_int(arg4), interface::get_int(arg5), interface::get_long(arg6))
-        }
+        // MMAP_SYSCALL => {
+        //     check_and_dispatch!(cage.mmap_syscall, interface::get_mutcbuf(arg1), interface::get_usize(arg2), interface::get_int(arg3), interface::get_int(arg4), interface::get_int(arg5), interface::get_long(arg6))
+        // }
         MUNMAP_SYSCALL => {
             check_and_dispatch!(cage.munmap_syscall, interface::get_mutcbuf(arg1), interface::get_usize(arg2))
         }
@@ -637,10 +638,10 @@ pub extern "C" fn lindgetsighandler(cageid: u64, signo: i32) -> u32 {
 }
 
 #[no_mangle]
-pub extern "C" fn lindrustinit(verbosity: isize) {
+pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
     let _ = interface::VERBOSE.set(verbosity); //assigned to suppress unused result warning
     interface::cagetable_init();
-    load_fs();
+    
     incref_root();
     incref_root();
 
@@ -665,7 +666,7 @@ pub extern "C" fn lindrustinit(verbosity: isize) {
         main_threadid: interface::RustAtomicU64::new(0),
         interval_timer: interface::IntervalTimer::new(0)
     };
-
+    
     interface::cagetable_insert(0, utilcage);
 
     //init cage is its own parent
@@ -693,6 +694,34 @@ pub extern "C" fn lindrustinit(verbosity: isize) {
     interface::cagetable_insert(1, initcage);
     // make sure /tmp is clean
     cleartmp(true);
+    
+    if load_flag {
+        /* A.W.:
+        *   Add initialization steps
+        */
+        let load_path = "/home/lind/lind_project/src/safeposix-rust/test.txt";
+        let relative_path = "/home/lind/lind_project/src/safeposix-rust";
+        // let load_path = "/home/RustPOSIX/test.txt";
+        // let relative_path = "/home/RustPOSIX";
+
+        const MB: usize = 4 * 1024 * 1024 * 1024;
+        
+        let mut vec = Vec::with_capacity(MB);
+        unsafe {
+            vec.set_len(MB);
+        }
+        let ptr:*mut u8 = vec.as_mut_ptr();
+        std::mem::forget(vec);
+        
+        let start_address = ptr as usize;
+        if let Ok(mut addr) = interface::GLOBAL_MEMORY.base_address.lock() {
+            *addr = start_address;
+        }
+
+        let buffer = vec![0u8; 5*MB];
+        let _ = load_fs(load_path,relative_path, 1);
+    }
+    
 }
 
 #[no_mangle]
@@ -707,12 +736,12 @@ pub extern "C" fn lindrustfinalize() {
     cleartmp(false);
     interface::cagetable_clear();
     // if we get here, persist and delete log
-    persist_metadata(&FS_METADATA);
-    if interface::pathexists(LOGFILENAME.to_string()) {
-        // remove file if it exists, assigning it to nothing to avoid the compiler yelling about unused result
-        let mut logobj = LOGMAP.write();
-        let log = logobj.take().unwrap();
-        let _close = log.close().unwrap();
-        let _logremove = interface::removefile(LOGFILENAME.to_string());
-    }
+    // persist_metadata(&FS_METADATA);
+    // if interface::pathexists(LOGFILENAME.to_string()) {
+    //     // remove file if it exists, assigning it to nothing to avoid the compiler yelling about unused result
+    //     let mut logobj = LOGMAP.write();
+    //     let log = logobj.take().unwrap();
+    //     let _close = log.close().unwrap();
+    //     let _logremove = interface::removefile(LOGFILENAME.to_string());
+    // }
 }

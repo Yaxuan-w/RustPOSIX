@@ -1,25 +1,27 @@
 // Filesystem metadata struct
 #![allow(dead_code)]
 
+use libc::abs;
+
 use crate::interface;
 use super::syscalls::fs_constants::*;
 use super::syscalls::sys_constants::*;
 use super::net::NET_METADATA;
 
-use super::cage::Cage;
+use super::cage::{Cage, FileDesc, FileDescriptor};
+
+use std::io::BufRead;
+use std::io::Read;
 
 pub const METADATAFILENAME: &str = "lind.metadata";
 
+/* A.W.: 
+*   Commented
+*/
 pub const LOGFILENAME: &str = "lind.md.log";
-
-pub static LOGMAP: interface::RustLazyGlobal<interface::RustRfc<interface::RustLock<Option<interface::EmulatedFileMap>>>> = 
-    interface::RustLazyGlobal::new(|| 
-        interface::RustRfc::new(interface::RustLock::new(None))
-);
 
 pub static FS_METADATA: interface::RustLazyGlobal<interface::RustRfc<FilesystemMetadata>> = 
     interface::RustLazyGlobal::new(|| interface::RustRfc::new(FilesystemMetadata::init_fs_metadata())); //we want to check if fs exists before doing a blank init, but not for now
-
 
 type FileObjectTable = interface::RustHashMap<usize, interface::EmulatedFile>;
 pub static FILEOBJECTTABLE: interface::RustLazyGlobal<FileObjectTable> = 
@@ -95,6 +97,10 @@ pub struct DirectoryInode {
 pub struct FilesystemMetadata {
     pub nextinode: interface::RustAtomicUsize,
     pub dev_id: u64,
+    /* A.W.: 
+    *   [Wait for change]
+    *   - Replace Inode with EmulatedFile?
+    */
     pub inodetable: interface::RustHashMap<usize, Inode>
 }
 
@@ -105,6 +111,9 @@ pub fn init_filename_to_inode_dict(curinode: usize, parentinode: usize) -> inter
     retval
 }
 
+/* A.W.: 
+*   Changes to remove usage of log-based fs
+*/
 impl FilesystemMetadata {
 
     pub fn blank_fs_init() -> FilesystemMetadata {
@@ -123,19 +132,11 @@ impl FilesystemMetadata {
         retval
     }
 
-    // Read file, and deserialize CBOR to FS METADATA
+    /* A.W.:
+    *   Always initial - because we don't need persistent
+    */
     pub fn init_fs_metadata() -> FilesystemMetadata {
-        // Read CBOR from file
-        if interface::pathexists(METADATAFILENAME.to_string()) {
-            let metadata_fileobj = interface::openfile(METADATAFILENAME.to_string(), false).unwrap();
-            let metadatabytes = metadata_fileobj.readfile_to_new_bytes().unwrap();
-            metadata_fileobj.close().unwrap();
-    
-            // Restore metadata
-            interface::serde_deserialize_from_bytes(&metadatabytes).unwrap()
-        } else {
-            FilesystemMetadata::blank_fs_init()
-        }
+        FilesystemMetadata::blank_fs_init()
     }
 }
 
@@ -217,67 +218,111 @@ pub fn format_fs() {
     newmetadata.inodetable.insert(6, randominode);
     newmetadata.inodetable.insert(7, tmpdirinode); 
 
-    let _logremove = interface::removefile(LOGFILENAME.to_string());
+    // let _logremove = interface::removefile(LOGFILENAME.to_string());
 
-    persist_metadata(&newmetadata);
+    // persist_metadata(&newmetadata);
 }
 
-pub fn load_fs() {
-    // If the metadata file exists, just close the file for later restore
-    // If it doesn't, lets create a new one, load special files, and persist it.
-    if interface::pathexists(METADATAFILENAME.to_string()) {
-        let metadata_fileobj = interface::openfile(METADATAFILENAME.to_string(), true).unwrap();
-        metadata_fileobj.close().unwrap();
-
-        // if we have a log file at this point, we need to sync it with the existing metadata
-        if interface::pathexists(LOGFILENAME.to_string()) {
-
-            let log_fileobj = interface::openfile(LOGFILENAME.to_string(), false).unwrap();
-            // read log file and parse count
-            let mut logread = log_fileobj.readfile_to_new_bytes().unwrap();
-            let logsize = interface::convert_bytes_to_size(&logread[0..interface::COUNTMAPSIZE]);
-
-            // create vec of log file bounded by indefinite encoding bytes (0x9F, 0xFF)
-            let mut logbytes: Vec<u8> = Vec::new();
-            logbytes.push(0x9F);
-            logbytes.extend_from_slice(&mut logread[interface::COUNTMAPSIZE..(interface::COUNTMAPSIZE + logsize)]);
-            logbytes.push(0xFF);
-            let mut logvec: Vec<(usize, Option<Inode>)> = interface::serde_deserialize_from_bytes(&logbytes).unwrap();
-
-            // drain the vector and deserialize into pairs of inodenum + inodes,
-            // if the inode exists, add it, if not, remove it
-            // keep track of the largest inodenum we see so we can update the nextinode counter
-            let mut max_inodenum = FS_METADATA.nextinode.load(interface::RustAtomicOrdering::Relaxed);
-            for serialpair in logvec.drain(..) {
-                let (inodenum, inode) = serialpair;
-                match inode {
-                    Some(inode) => {
-                        max_inodenum = interface::rust_max(max_inodenum, inodenum);
-                        FS_METADATA.inodetable.insert(inodenum, inode);
-                    }
-                    None => {FS_METADATA.inodetable.remove(&inodenum);}
-                }
+/* A.W.:
+*   2 kinds of readfile(): 
+*       1) a txt file structured by (filename filesize filepath;filename2 filesize2 filepath2;...) 
+*       2) a dir path that contains the actual file needs to be read, parameters: actual path = content_path + relative path 
+*           (from input_path)
+*/
+pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Result<()> {
+    /* A.W.:
+    *   Loading File is consisted by two parts: (filename filesize filepath;filename2 filesize2 filepath2;...)
+    *   "not whitespace between size and next filename" followed by contents
+    */
+    // Open the loading file
+    let file = interface::File::open(input_path)?;
+    let mut reader = interface::BufReader::new(file);
+    // Read file information entries (Read all bytes until a newline (the 0xA byte) is reached )
+    let mut lines = String::new();
+    let _ = reader.read_line(&mut lines);
+    // Divide the file information into individual entries
+    let mut file_entries = Vec::new();
+    let entries = lines.split(';');
+    for entry in entries {
+        // Format: filename filesize filepath
+        let parts: Vec<_> = entry.trim().split_whitespace().collect();
+        if parts.len() == 3 {
+            let filename = parts[0].to_string();
+            let filesize = parts[1].parse::<usize>();
+            let filepath = parts[2];
+            if let Ok(filesize) = filesize {
+                file_entries.push((filename, filesize, filepath));
+            } else {
+                eprintln!("Error parsing size for entry: {}", entry);
             }
-
-            // update the nextinode counter to avoid collisions
-            FS_METADATA.nextinode.store(max_inodenum + 1, interface::RustAtomicOrdering::Relaxed);
-
-            let _logclose = log_fileobj.close();
-            let _logremove = interface::removefile(LOGFILENAME.to_string());
-
-            // clean up broken links
-            fsck();
         }
-    } else {
-        if interface::pathexists(LOGFILENAME.to_string()) {
-            println!("Filesystem in very corrupted state: log existed but metadata did not!");
-        }
-        format_fs();
     }
-
-    // then recreate the log
-    create_log();
+   
+    // Read contents into EmulatedFile according to file information entry
+    for (filename, filesize, filepath) in file_entries {
+        let abs_content_path = format!("{}{}", content_path, filepath);
+        let mut contentfile = interface::File::open(abs_content_path)?;
+        let mut filedata = Vec::new();
+        let _ = contentfile.read_to_end(&mut filedata)?;
+        
+        // Create a new emulated file and write the contents
+        let mut emulated_file = interface::openfile(filename.clone()).unwrap();
+        let _ = emulated_file.writefile_from_bytes(&filedata).unwrap();
+        
+        // Add to metadata
+        let cage = interface::cagetable_getref(cageid);
+        let truepath = normpath(convpath(filepath), &cage);
+        if filepath.len() == 0 { panic!("No path in loading phase"); }
+        let (fd, guardopt) = cage.get_next_fd(None);
+        if fd < 0 { panic!("Cannot get fd table in loading phase"); }
+        let fdoption = &mut *guardopt.unwrap();
+        let flags = O_RDWR | O_CREAT | O_APPEND;
+        match metawalkandparent(truepath.as_path()) {
+            (None, None) => {
+                panic!("Cannot create files in loading phase");
+            }
+            (None, Some(pardirinode)) => {
+                let mode = 0o777;
+                let effective_mode = S_IFREG as u32 | mode;
+                let time = interface::timestamp(); //We do a real timestamp now
+                let newinode = Inode::File(GenericInode {
+                    size: filesize, uid: DEFAULT_UID, gid: DEFAULT_GID,
+                    mode: effective_mode, linkcount: 1, refcount: 1,
+                    atime: time, ctime: time, mtime: time,
+                });
+                let newinodenum = FS_METADATA.nextinode.fetch_add(1, interface::RustAtomicOrdering::Relaxed); //fetch_add returns the previous value, which is the inode number we want
+                if let Inode::Dir(ref mut ind) = *(FS_METADATA.inodetable.get_mut(&pardirinode).unwrap()) {
+                    ind.filename_to_inode_dict.insert(filename.clone(), newinodenum);
+                    ind.linkcount += 1;
+                    //insert a reference to the file in the parent directory
+                } else {
+                    panic!("It's a dictionary in loading phase");
+                }
+                
+                FS_METADATA.inodetable.insert(newinodenum, newinode);
+                if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
+                    let _ = emulated_file.close();
+                    vac.insert(emulated_file);
+                }
+                
+                // Add to FDTABLE
+                let position = if 0 != flags & O_APPEND {filesize} else {0};
+                let allowmask = O_RDWRFLAGS | O_CLOEXEC;
+                let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
+                let _insertval = fdoption.insert(FileDescriptor::File(newfd));
+                
+            }
+            (Some(_inodenum), ..) => {
+                // panic!("File already exists in loading phasae");
+            }
+        }
+        
+    }
+    Ok(())
+    
 }
+
+
 
 pub fn fsck() {
     FS_METADATA.inodetable.retain(|_inodenum, inode_obj| {
@@ -297,46 +342,6 @@ pub fn fsck() {
     });
 }
 
-pub fn create_log() {
-    // reinstantiate the log file and assign it to the metadata struct
-    let log_mapobj = interface::mapfilenew(LOGFILENAME.to_string()).unwrap();
-    let mut logobj = LOGMAP.write();
-    logobj.replace(log_mapobj);
-}
-
-// Serialize New Metadata to CBOR, write to logfile
-pub fn log_metadata(metadata: &FilesystemMetadata, inodenum: usize) {
-    let serialpair: (usize, Option<&Inode>);
-    let entrybytes;
-
-    // pack and serialize log entry
-    if let Some(inode) = metadata.inodetable.get(&inodenum) {
-        serialpair = (inodenum, Some(&*inode));
-        entrybytes = interface::serde_serialize_to_bytes(&serialpair).unwrap();
-    } else {
-        serialpair = (inodenum, None);
-        entrybytes = interface::serde_serialize_to_bytes(&serialpair).unwrap();
-    }
-
-    // write to file
-    let mut mapopt = LOGMAP.write();
-    let map = mapopt.as_mut().unwrap();
-    map.write_to_map(&entrybytes).unwrap();
-}
-
-// Serialize Metadata Struct to CBOR, write to file
-pub fn persist_metadata(metadata: &FilesystemMetadata) {
-    // Serialize metadata to string
-    let metadatabytes = interface::serde_serialize_to_bytes(&metadata).unwrap();
-    
-    // remove file if it exists, assigning it to nothing to avoid the compiler yelling about unused result
-    let _ = interface::removefile(METADATAFILENAME.to_string());
-
-    // write to file
-    let mut metadata_fileobj = interface::openfile(METADATAFILENAME.to_string(), true).unwrap();
-    metadata_fileobj.writefile_from_bytes(&metadatabytes).unwrap();
-    metadata_fileobj.close().unwrap();
-}
 
 pub fn convpath(cpath: &str) -> interface::RustPathBuf {
     interface::RustPathBuf::from(cpath)

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 // File system related system calls
-use crate::interface;
+use crate::interface::{self, EmulatedFile};
 use crate::safeposix::cage::{*, FileDescriptor::*};
 use crate::safeposix::filesystem::*;
 use crate::safeposix::net::{NET_METADATA};
@@ -74,12 +74,12 @@ impl Cage {
                     return syscall_error(Errno::ENOTDIR, "open", "tried to create a file as a child of something that isn't a directory");
                 }
                 FS_METADATA.inodetable.insert(newinodenum, newinode);
-                log_metadata(&FS_METADATA, pardirinode);
-                log_metadata(&FS_METADATA, newinodenum);
+                // log_metadata(&FS_METADATA, pardirinode);
+                
 
                 if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
                     let sysfilename = format!("{}{}", FILEDATAPREFIX, newinodenum);
-                    vac.insert(interface::openfile(sysfilename, true).unwrap());
+                    vac.insert(interface::openfile(sysfilename).unwrap());
                 }
                 
                 let _insertval = fdoption.insert(File(self._file_initializer(newinodenum, flags, 0)));
@@ -96,29 +96,36 @@ impl Cage {
                 match *inodeobj {
                     Inode::File(ref mut f) => {
                         if O_TRUNC == (flags & O_TRUNC) {
-                        // We only do this to regular files, otherwise O_TRUNC is undefined
+                            // We only do this to regular files, otherwise O_TRUNC is undefined
                             //close the file object if another cage has it open
+                            
+                            let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
                             let entry = FILEOBJECTTABLE.entry(inodenum);
                             if let interface::RustHashEntry::Occupied(occ) = &entry {
                                 occ.get().close().unwrap();
                             }
                             // resize it to 0
                             f.size = 0;
-    
+                            /* A.W.: 
+                            *   Replace with IMFS 
+                            */
+                            let _ = emulatedfile.shrink(0);
                             //remove the previous file and add a new one of 0 length
                             if let interface::RustHashEntry::Occupied(occ) = entry {
                                 occ.remove_entry();
                             }
-    
-                            let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
-                            interface::removefile(sysfilename.clone()).unwrap();
-                        }
+                            
+                            // let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
+                            // interface::removefile(sysfilename.clone()).unwrap();
+                        } 
                         
                         if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(inodenum){
                             let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
-                            vac.insert(interface::openfile(sysfilename, true).unwrap());
+                            vac.insert(interface::openfile(sysfilename).unwrap());
                         }
                         
+                        let open_emulatedfile = FILEOBJECTTABLE.get(&inodenum).unwrap();
+                        let _ = open_emulatedfile.open();
                         size = f.size;
                         f.refcount += 1;
                     }
@@ -177,8 +184,8 @@ impl Cage {
                 } //insert a reference to the file in the parent directory
                 else {unreachable!();}
                 metadata.inodetable.insert(newinodenum, newinode);
-                log_metadata(&metadata, pardirinode);
-                log_metadata(&metadata, newinodenum);
+                // log_metadata(&metadata, pardirinode);
+                // log_metadata(&metadata, newinodenum);
                 0 //mkdir has succeeded
             }
 
@@ -228,8 +235,8 @@ impl Cage {
                     parentdir.linkcount += 1;
                 } //insert a reference to the file in the parent directory
                 metadata.inodetable.insert(newinodenum, newinode);
-                log_metadata(metadata, pardirinode);
-                log_metadata(metadata, newinodenum);
+                // log_metadata(metadata, pardirinode);
+                // log_metadata(metadata, newinodenum);
                 0 //mknod has succeeded
             }
 
@@ -285,8 +292,8 @@ impl Cage {
                             parentdirinodeobj.filename_to_inode_dict.insert(filename, inodenum);
                             parentdirinodeobj.linkcount += 1;
                             drop(parentinodeobj);
-                            log_metadata(&FS_METADATA, pardirinode);
-                            log_metadata(&FS_METADATA, inodenum);
+                            // log_metadata(&FS_METADATA, pardirinode);
+                            // log_metadata(&FS_METADATA, inodenum);
                         } else {
                             panic!("Parent directory was not a directory!");
                         }
@@ -343,7 +350,7 @@ impl Cage {
             (Some(inodenum), Some(parentinodenum)) => {
                 let mut inodeobj = FS_METADATA.inodetable.get_mut(&inodenum).unwrap();
 
-                let (currefcount, curlinkcount, has_fobj, log) = match *inodeobj {
+                let (currefcount, curlinkcount, has_fobj, _log) = match *inodeobj {
                     Inode::File(ref mut f) => {f.linkcount -= 1; (f.refcount, f.linkcount, true, true)},
                     Inode::CharDev(ref mut f) => {f.linkcount -= 1; (f.refcount, f.linkcount, false, true)},
                     Inode::Socket(ref mut f) => {f.linkcount -= 1; (f.refcount, f.linkcount, false, false)},
@@ -357,23 +364,29 @@ impl Cage {
 
                 if curlinkcount == 0 {
                     if currefcount == 0  {
-
+                        /* A.W.:
+                        *   Replace with IMFS 
+                        */
+                        if has_fobj {
+                            let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
+                            let _ = emulatedfile.shrink(0);
+                        }
                         //actually remove file and the handle to it
                         FS_METADATA.inodetable.remove(&inodenum);
-                        if has_fobj {
-                            let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
-                            interface::removefile(sysfilename).unwrap();
-                        }
+                        // if has_fobj {
+                        //     let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
+                        //     interface::removefile(sysfilename).unwrap();
+                        // }
 
                     } //we don't need a separate unlinked flag, we can just check that refcount is 0
                 }
                 NET_METADATA.domsock_paths.remove(&truepath);
 
                 // the log boolean will be false if we are workign on a domain socket
-                if log {
-                    log_metadata(&FS_METADATA, parentinodenum);
-                    log_metadata(&FS_METADATA, inodenum);
-                }
+                // if log {
+                //     log_metadata(&FS_METADATA, parentinodenum);
+                //     log_metadata(&FS_METADATA, inodenum);
+                // }
                 0 //unlink has succeeded
             }
         }
@@ -608,6 +621,11 @@ impl Cage {
                             if let Ok(bytesread) = fileobject.readat(buf, count, position) {
                                 //move position forward by the number of bytes we've read
 
+                                // let mut test = vec![0;2];   
+                                // test.clone().into_boxed_slice();
+                                // emulated_file.readat(test.as_mut_ptr(), 2, 0);
+                                // panic!("Something wrong {:?}", std::str::from_utf8(buf).unwrap());
+
                                 normalfile_filedesc_obj.position += bytesread;
                                 bytesread as i32
                             } else {
@@ -775,7 +793,6 @@ impl Cage {
                                     normalfile_inode_obj.size = newposition;
                                     drop(inodeobj);
                                     drop(fileobject);
-                                    log_metadata(&FS_METADATA, normalfile_filedesc_obj.inode);
                                 } //update file size if necessary
                                 
                                 byteswritten as i32
@@ -851,6 +868,7 @@ impl Cage {
                         Inode::File(ref mut normalfile_inode_obj) => {
                             let position = offset as usize;
                             let filesize = normalfile_inode_obj.size;
+                            /* Change the logic */
                             let blankbytecount = offset - filesize as isize;
 
                             let mut fileobject = FILEOBJECTTABLE.get_mut(&normalfile_filedesc_obj.inode).unwrap();
@@ -881,8 +899,7 @@ impl Cage {
                             if newposition > filesize {
                                normalfile_inode_obj.size = newposition;
                                drop(fileobject);
-                               drop(inodeobj);
-                               log_metadata(&FS_METADATA, normalfile_filedesc_obj.inode);                            
+                               drop(inodeobj);                           
                             } //update file size if necessary
 
                             retval
@@ -1307,17 +1324,16 @@ impl Cage {
                             //if it's not a reg file, then we have nothing to close
                             //Inode::File is a regular file by default
                             if normalfile_inode_obj.refcount == 0 {
-                                FILEOBJECTTABLE.remove(&inodenum).unwrap().1.close().unwrap();
                                 if normalfile_inode_obj.linkcount == 0 {
                                     drop(inodeobj);
+                                    let mut emulatedfile = FILEOBJECTTABLE.get_mut(&inodenum).unwrap();
+                                    let _ = emulatedfile.shrink(0);
                                     //removing the file from the entire filesystem (interface, metadata, and object table)
                                     FS_METADATA.inodetable.remove(&inodenum);
-                                    let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
-                                    interface::removefile(sysfilename).unwrap();
+                                    let _ = emulatedfile.close();
                                 } else {
                                     drop(inodeobj);
                                 }
-                                log_metadata(&FS_METADATA, inodenum);
                             }
                         },
                         Inode::Dir(ref mut dir_inode_obj) => {
@@ -1332,7 +1348,6 @@ impl Cage {
                                 //removing the file from the metadata 
                                 FS_METADATA.inodetable.remove(&inodenum);
                                 drop(inodeobj);
-                                log_metadata(&FS_METADATA, inodenum);     
                             } 
                         },
                         Inode::CharDev(ref mut char_inode_obj) => {
@@ -1350,7 +1365,6 @@ impl Cage {
                             }  else {
                                 drop(inodeobj);
                             }
-                            log_metadata(&FS_METADATA, inodenum);
                         },
                         Inode::Socket(_) => { panic!("close(): Socket inode found on a filedesc fd.") }
                     }
@@ -1514,7 +1528,6 @@ impl Cage {
     
     pub fn _chmod_helper(inodenum: usize, mode: u32) {
          let mut thisinode = FS_METADATA.inodetable.get_mut(&inodenum).unwrap();
-         let mut log = true;
          if mode & (S_IRWXA|(S_FILETYPEFLAGS as u32)) == mode {
             match *thisinode {
                 Inode::File(ref mut general_inode) => {
@@ -1525,14 +1538,12 @@ impl Cage {
                 }   
                 Inode::Socket(ref mut sock_inode) => {
                     sock_inode.mode = (sock_inode.mode &!S_IRWXA) | mode;
-                    log = false;
                 }
                 Inode::Dir(ref mut dir_inode) => {
                     dir_inode.mode = (dir_inode.mode &!S_IRWXA) | mode;
                 }
             }
             drop(thisinode);
-            if log { log_metadata(&FS_METADATA, inodenum) }; 
          }
     }
 
@@ -1588,60 +1599,64 @@ impl Cage {
 
     //------------------------------------MMAP SYSCALL------------------------------------
     
-    pub fn mmap_syscall(&self, addr: *mut u8, len: usize, prot: i32, flags: i32, fildes: i32, off: i64) -> i32 {
-        if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
+    /* A.W.:
+    *   [Wait to do]
+    *   - Comment for now
+    */
+    // pub fn mmap_syscall(&self, addr: *mut u8, len: usize, prot: i32, flags: i32, fildes: i32, off: i64) -> i32 {
+    //     if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
 
-        if 0 == flags & (MAP_PRIVATE | MAP_SHARED) {
-            syscall_error(Errno::EINVAL, "mmap", "The value of flags is invalid (neither MAP_PRIVATE nor MAP_SHARED is set)");
-        }
+    //     if 0 == flags & (MAP_PRIVATE | MAP_SHARED) {
+    //         syscall_error(Errno::EINVAL, "mmap", "The value of flags is invalid (neither MAP_PRIVATE nor MAP_SHARED is set)");
+    //     }
 
-        if 0 != flags & MAP_ANONYMOUS {
-            return interface::libc_mmap(addr, len, prot, flags, -1, 0);
-        }
+    //     if 0 != flags & MAP_ANONYMOUS {
+    //         return interface::libc_mmap(addr, len, prot, flags, -1, 0);
+    //     }
 
-        let checkedfd = self.get_filedescriptor(fildes).unwrap();
-        let mut unlocked_fd = checkedfd.write();
-        if let Some(filedesc_enum) = &mut *unlocked_fd {
+    //     let checkedfd = self.get_filedescriptor(fildes).unwrap();
+    //     let mut unlocked_fd = checkedfd.write();
+    //     if let Some(filedesc_enum) = &mut *unlocked_fd {
 
-            //confirm fd type is mappable
-            match filedesc_enum {
-                File(ref mut normalfile_filedesc_obj) => {
-                    let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
+    //         //confirm fd type is mappable
+    //         match filedesc_enum {
+    //             File(ref mut normalfile_filedesc_obj) => {
+    //                 let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
 
-                    //confirm inode type is mappable
-                    match &*inodeobj {
-                        Inode::File(normalfile_inode_obj) => {
-                            //if we want to write our changes back to the file the file needs to be open for reading and writing
-                            if (flags & MAP_SHARED != 0) && (flags & PROT_WRITE != 0) && (normalfile_filedesc_obj.flags & O_RDWR != 0) {
-                                return syscall_error(Errno::EACCES, "mmap", "file descriptor is not open RDWR, but MAP_SHARED and PROT_WRITE are set");
-                            }
-                            let filesize = normalfile_inode_obj.size;
-                            if off < 0 || off > filesize as i64 {
-                                return syscall_error(Errno::ENXIO, "mmap", "Addresses in the range [off,off+len) are invalid for the object specified by fildes.");
-                            }
-                            //because of NaCl's internal workings we must allow mappings to extend past the end of a file
-                            let fobj = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
-                            //we cannot mmap a rust file in quite the right way so we retrieve the fd number from it
-                            //this is the system fd number--the number of the lind.<inodenum> file in our host system
-                            let fobjfdno = fobj.as_fd_handle_raw_int();
+    //                 //confirm inode type is mappable
+    //                 match &*inodeobj {
+    //                     Inode::File(normalfile_inode_obj) => {
+    //                         //if we want to write our changes back to the file the file needs to be open for reading and writing
+    //                         if (flags & MAP_SHARED != 0) && (flags & PROT_WRITE != 0) && (normalfile_filedesc_obj.flags & O_RDWR != 0) {
+    //                             return syscall_error(Errno::EACCES, "mmap", "file descriptor is not open RDWR, but MAP_SHARED and PROT_WRITE are set");
+    //                         }
+    //                         let filesize = normalfile_inode_obj.size;
+    //                         if off < 0 || off > filesize as i64 {
+    //                             return syscall_error(Errno::ENXIO, "mmap", "Addresses in the range [off,off+len) are invalid for the object specified by fildes.");
+    //                         }
+    //                         //because of NaCl's internal workings we must allow mappings to extend past the end of a file
+    //                         let fobj = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
+    //                         //we cannot mmap a rust file in quite the right way so we retrieve the fd number from it
+    //                         //this is the system fd number--the number of the lind.<inodenum> file in our host system
+    //                         let fobjfdno = fobj.as_fd_handle_raw_int();
 
 
-                            interface::libc_mmap(addr, len, prot, flags, fobjfdno, off)
-                        }
+    //                         interface::libc_mmap(addr, len, prot, flags, fobjfdno, off)
+    //                     }
 
-                        Inode::CharDev(_chardev_inode_obj) => {
-                            syscall_error(Errno::EOPNOTSUPP, "mmap", "lind currently does not support mapping character files")
-                        }
+    //                     Inode::CharDev(_chardev_inode_obj) => {
+    //                         syscall_error(Errno::EOPNOTSUPP, "mmap", "lind currently does not support mapping character files")
+    //                     }
 
-                        _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
-                    }
-                }
-                _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
-            }
-        } else {
-            syscall_error(Errno::EBADF, "mmap", "invalid file descriptor")
-        }
-    }
+    //                     _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
+    //                 }
+    //             }
+    //             _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
+    //         }
+    //     } else {
+    //         syscall_error(Errno::EBADF, "mmap", "invalid file descriptor")
+    //     }
+    // }
 
     //------------------------------------MUNMAP SYSCALL------------------------------------
     
@@ -1745,10 +1760,7 @@ impl Cage {
                         if removal_result != 0 {return removal_result;}
 
                         // remove entry of corresponding inodenum from inodetable
-                        if remove_inode { FS_METADATA.inodetable.remove(&inodenum).unwrap(); } 
-
-                        log_metadata(&FS_METADATA, parent_inodenum);
-                        log_metadata(&FS_METADATA, inodenum);       
+                        if remove_inode { FS_METADATA.inodetable.remove(&inodenum).unwrap(); }     
                         0 // success
                     }
                     _ => { syscall_error(Errno::ENOTDIR, "rmdir", "Path is not a directory") }
@@ -1790,8 +1802,7 @@ impl Cage {
 
                     // remove entry of old path from filename-inode dict
                     parent_dir.filename_to_inode_dict.remove(&true_oldpath.file_name().unwrap().to_str().unwrap().to_string());
-                    drop(pardir_inodeobj);
-                    log_metadata(&FS_METADATA, parent_inodenum);       
+                    drop(pardir_inodeobj);     
                 }
                 NET_METADATA.domsock_paths.insert(true_newpath);
                 NET_METADATA.domsock_paths.remove(&true_oldpath);
@@ -1828,7 +1839,7 @@ impl Cage {
                     panic!("Somehow a normal file with an fd was truncated but there was no file object in rustposix?");
                 } else {
                     let sysfilename = format!("{}{}", FILEDATAPREFIX, inodenum);
-                    tempbind = interface::openfile(sysfilename, true).unwrap();
+                    tempbind = interface::openfile(sysfilename).unwrap();
                     close_on_exit = true;
                     &mut tempbind
                 };
@@ -1858,7 +1869,6 @@ impl Cage {
                 normalfile_inode_obj.size = ulength;
 
                 drop(inodeobj);
-                log_metadata(&FS_METADATA, inodenum);
                 0 // truncating has succeeded!
             }
             Inode::CharDev(_) => {
@@ -1874,107 +1884,113 @@ impl Cage {
     }
 
     //------------------------------------FSYNC SYSCALL------------------------------------
+    /* A.W.:
+    *   Comment for now
+    */
+    // pub fn fsync_syscall(&self, fd: i32) -> i32 {
+    //     let checkedfd = self.get_filedescriptor(fd).unwrap();
+    //     let mut unlocked_fd = checkedfd.write();
+    //     if let Some(filedesc_enum) = &mut *unlocked_fd {
+    //         match filedesc_enum {
+    //             File(ref mut normalfile_filedesc_obj) => {
+    //                 if is_rdonly(normalfile_filedesc_obj.flags) {
+    //                     return syscall_error(Errno::EBADF, "fsync", "specified file not open for sync");
+    //                 }
+    //                 let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
+    //                 match &*inodeobj {
+    //                     Inode::File(_) => {
+    //                         let fileobject = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
 
-    pub fn fsync_syscall(&self, fd: i32) -> i32 {
-        let checkedfd = self.get_filedescriptor(fd).unwrap();
-        let mut unlocked_fd = checkedfd.write();
-        if let Some(filedesc_enum) = &mut *unlocked_fd {
-            match filedesc_enum {
-                File(ref mut normalfile_filedesc_obj) => {
-                    if is_rdonly(normalfile_filedesc_obj.flags) {
-                        return syscall_error(Errno::EBADF, "fsync", "specified file not open for sync");
-                    }
-                    let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
-                    match &*inodeobj {
-                        Inode::File(_) => {
-                            let fileobject = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
-
-                            match fileobject.fsync() {
-                                Ok(_) => 0,
-                                _ => syscall_error(Errno::EIO, "fsync", "an error occurred during synchronization")
-                            }
-                        }
-                        _ => {
-                            syscall_error(Errno::EROFS, "fsync", "does not support special files for synchronization")
-                        }
-                    }
-                }
-                _ => {syscall_error(Errno::EINVAL, "fsync", "fd is attached to an object which is unsuitable for synchronization")}
-            }
-        } else {
-            syscall_error(Errno::EBADF, "fsync", "invalid file descriptor")
-        }
-    }
+    //                         match fileobject.fsync() {
+    //                             Ok(_) => 0,
+    //                             _ => syscall_error(Errno::EIO, "fsync", "an error occurred during synchronization")
+    //                         }
+    //                     }
+    //                     _ => {
+    //                         syscall_error(Errno::EROFS, "fsync", "does not support special files for synchronization")
+    //                     }
+    //                 }
+    //             }
+    //             _ => {syscall_error(Errno::EINVAL, "fsync", "fd is attached to an object which is unsuitable for synchronization")}
+    //         }
+    //     } else {
+    //         syscall_error(Errno::EBADF, "fsync", "invalid file descriptor")
+    //     }
+    // }
 
     //------------------------------------FDATASYNC SYSCALL------------------------------------
+    /* A.W.:
+    *   Comment for now
+    */
+    // pub fn fdatasync_syscall(&self, fd: i32) -> i32 {
+    //     let checkedfd = self.get_filedescriptor(fd).unwrap();
+    //     let mut unlocked_fd = checkedfd.write();
+    //     if let Some(filedesc_enum) = &mut *unlocked_fd {
+    //         match filedesc_enum {
+    //             File(ref mut normalfile_filedesc_obj) => {
+    //                 if is_rdonly(normalfile_filedesc_obj.flags) {
+    //                     return syscall_error(Errno::EBADF, "fdatasync", "specified file not open for sync");
+    //                 }
+    //                 let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
+    //                 match &*inodeobj {
+    //                     Inode::File(_) => {
+    //                         let fileobject = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
 
-    pub fn fdatasync_syscall(&self, fd: i32) -> i32 {
-        let checkedfd = self.get_filedescriptor(fd).unwrap();
-        let mut unlocked_fd = checkedfd.write();
-        if let Some(filedesc_enum) = &mut *unlocked_fd {
-            match filedesc_enum {
-                File(ref mut normalfile_filedesc_obj) => {
-                    if is_rdonly(normalfile_filedesc_obj.flags) {
-                        return syscall_error(Errno::EBADF, "fdatasync", "specified file not open for sync");
-                    }
-                    let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
-                    match &*inodeobj {
-                        Inode::File(_) => {
-                            let fileobject = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
-
-                            match fileobject.fdatasync() {
-                                Ok(_) => 0,
-                                _ => syscall_error(Errno::EIO, "fdatasync", "an error occurred during synchronization")
-                            }
-                        }
-                        _ => {
-                            syscall_error(Errno::EROFS, "fdatasync", "does not support special files for synchronization")
-                        }
-                    }
-                }
-                _ => {syscall_error(Errno::EINVAL, "fdatasync", "fd is attached to an object which is unsuitable for synchronization")}
-            }
-        } else {
-            syscall_error(Errno::EBADF, "fdatasync", "invalid file descriptor")
-        }
-    }
+    //                         match fileobject.fdatasync() {
+    //                             Ok(_) => 0,
+    //                             _ => syscall_error(Errno::EIO, "fdatasync", "an error occurred during synchronization")
+    //                         }
+    //                     }
+    //                     _ => {
+    //                         syscall_error(Errno::EROFS, "fdatasync", "does not support special files for synchronization")
+    //                     }
+    //                 }
+    //             }
+    //             _ => {syscall_error(Errno::EINVAL, "fdatasync", "fd is attached to an object which is unsuitable for synchronization")}
+    //         }
+    //     } else {
+    //         syscall_error(Errno::EBADF, "fdatasync", "invalid file descriptor")
+    //     }
+    // }
 
     //------------------------------------SYNC_FILE_RANGE SYSCALL------------------------------------
+    /* A.W.:
+    *   Comment for now
+    */
+    //  pub fn sync_file_range_syscall(&self, fd: i32, offset: isize, nbytes: isize, flags: u32) -> i32 {
+    //     let checkedfd = self.get_filedescriptor(fd).unwrap();
+    //     let mut unlocked_fd = checkedfd.write();
+    //     if let Some(filedesc_enum) = &mut *unlocked_fd {
+    //         match filedesc_enum {
+    //             File(ref mut normalfile_filedesc_obj) => {
+    //                 let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
+    //                 match &*inodeobj {
+    //                     Inode::File(_) => {
+	// 		    // This code segment obtains the file object associated with the specified inode from FILEOBJECTTABLE.
+	// 		    // It calls 'sync_file_range' on this file object, where initially the flags are validated, returning -EINVAL for incorrect flags.
+	// 		    // If the flags are correct, libc::sync_file_range is invoked; if it fails (returns -1), 'from_discriminant' function handles the error code.
 
-     pub fn sync_file_range_syscall(&self, fd: i32, offset: isize, nbytes: isize, flags: u32) -> i32 {
-        let checkedfd = self.get_filedescriptor(fd).unwrap();
-        let mut unlocked_fd = checkedfd.write();
-        if let Some(filedesc_enum) = &mut *unlocked_fd {
-            match filedesc_enum {
-                File(ref mut normalfile_filedesc_obj) => {
-                    let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
-                    match &*inodeobj {
-                        Inode::File(_) => {
-			    // This code segment obtains the file object associated with the specified inode from FILEOBJECTTABLE.
-			    // It calls 'sync_file_range' on this file object, where initially the flags are validated, returning -EINVAL for incorrect flags.
-			    // If the flags are correct, libc::sync_file_range is invoked; if it fails (returns -1), 'from_discriminant' function handles the error code.
-
-			    let fobj = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
-                            let result = fobj.sync_file_range(offset, nbytes, flags);
-                            if result == 0 || result == -(EINVAL as i32) {
-                                  return result;
-                            }
-                            match Errno::from_discriminant(interface::get_errno()) {
-                                  Ok(i) => {return syscall_error(i, "sync_file_range", "The libc call to sync_file_range failed!");},
-                                  Err(()) => panic!("Unknown errno value from setsockopt returned!"),
-                            };
-                        }
-                        _ => {
-                            syscall_error(Errno::ESPIPE, "sync_file_range", "does not support special files for synchronization")
-                        }
-                    }
-                }
-                _ => {syscall_error(Errno::EBADF, "sync_file_range", "fd is attached to an object which is unsuitable for synchronization")}
-            }
-        } else {
-            syscall_error(Errno::EBADF, "sync_file_range", "invalid file descriptor")
-        }
-    }
+	// 		    let fobj = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
+    //                         let result = fobj.sync_file_range(offset, nbytes, flags);
+    //                         if result == 0 || result == -(EINVAL as i32) {
+    //                               return result;
+    //                         }
+    //                         match Errno::from_discriminant(interface::get_errno()) {
+    //                               Ok(i) => {return syscall_error(i, "sync_file_range", "The libc call to sync_file_range failed!");},
+    //                               Err(()) => panic!("Unknown errno value from setsockopt returned!"),
+    //                         };
+    //                     }
+    //                     _ => {
+    //                         syscall_error(Errno::ESPIPE, "sync_file_range", "does not support special files for synchronization")
+    //                     }
+    //                 }
+    //             }
+    //             _ => {syscall_error(Errno::EBADF, "sync_file_range", "fd is attached to an object which is unsuitable for synchronization")}
+    //         }
+    //     } else {
+    //         syscall_error(Errno::EBADF, "sync_file_range", "invalid file descriptor")
+    //     }
+    // }
 
     //------------------FTRUNCATE SYSCALL------------------
     

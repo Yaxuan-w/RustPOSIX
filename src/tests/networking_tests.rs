@@ -31,7 +31,7 @@ pub mod net_tests {
     }
 
     pub fn ut_lind_net_bind() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let sockfd = cage.socket_syscall(AF_INET, SOCK_STREAM, 0);
 
@@ -56,7 +56,7 @@ pub mod net_tests {
     
 
     pub fn ut_lind_net_bind_on_zero() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //both the server and the socket are run from this file
@@ -271,7 +271,7 @@ pub mod net_tests {
 
 
     pub fn ut_lind_net_bind_multiple() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let mut sockfd = cage.socket_syscall(AF_INET, SOCK_STREAM, 0);
@@ -301,7 +301,7 @@ pub mod net_tests {
 
 
     pub fn ut_lind_net_connect_basic_udp() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //should be okay...
@@ -320,7 +320,7 @@ pub mod net_tests {
 
 
     pub fn ut_lind_net_getpeername() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //doing a few things with connect -- only UDP right now
@@ -345,7 +345,7 @@ pub mod net_tests {
 
 
     pub fn ut_lind_net_getsockname() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         
         let sockfd = cage.socket_syscall(AF_INET, SOCK_STREAM, 0);
@@ -373,7 +373,7 @@ pub mod net_tests {
     
     
     pub fn ut_lind_net_listen() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         
         let serversockfd = cage.socket_syscall(AF_INET, SOCK_STREAM, 0);
@@ -418,7 +418,7 @@ pub mod net_tests {
 
 
     pub fn ut_lind_net_poll() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let filefd = cage.open_syscall("/netpolltest.txt", O_CREAT | O_EXCL | O_RDWR, S_IRWXA);
@@ -568,7 +568,7 @@ pub mod net_tests {
 
 
     pub fn ut_lind_net_recvfrom() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let serversockfd = cage.socket_syscall(AF_INET, SOCK_STREAM, 0);
@@ -677,7 +677,7 @@ pub mod net_tests {
     }
 
     pub fn ut_lind_net_select() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let filefd = cage.open_syscall("/netselecttest.txt", O_CREAT | O_EXCL | O_RDWR, S_IRWXA);
@@ -830,7 +830,7 @@ pub mod net_tests {
     }
           
     pub fn ut_lind_net_shutdown() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         
         let serversockfd = cage.socket_syscall(AF_INET, SOCK_STREAM, 0);
@@ -879,7 +879,7 @@ pub mod net_tests {
     }
 
     pub fn ut_lind_net_socket() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let mut sockfd = cage.socket_syscall(AF_INET, SOCK_STREAM, 0);
@@ -909,7 +909,7 @@ pub mod net_tests {
 
 
     pub fn ut_lind_net_socketoptions() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let sockfd = cage.socket_syscall(AF_INET, SOCK_STREAM, 0);
@@ -993,7 +993,7 @@ pub mod net_tests {
     }
     
     pub fn ut_lind_net_socketpair() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let mut socketpair = interface::SockPair::default();
         assert_eq!(Cage::socketpair_syscall(cage.clone(), AF_UNIX, SOCK_STREAM, 0, &mut socketpair), 0);
@@ -1037,7 +1037,7 @@ pub mod net_tests {
     }
 
     pub fn ut_lind_net_udp_bad_bind() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let sockfd = cage.socket_syscall(AF_INET, SOCK_DGRAM, 0);
@@ -1059,7 +1059,7 @@ pub mod net_tests {
         lindrustfinalize();
     }
     pub fn ut_lind_net_udp_simple() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //just going to test the basic connect with UDP now...
@@ -1126,7 +1126,7 @@ pub mod net_tests {
     }
 
     pub fn ut_lind_net_udp_connect() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //getting the sockets set up...
@@ -1173,7 +1173,7 @@ pub mod net_tests {
     }
  
     pub fn ut_lind_net_gethostname() { //Assuming DEFAULT_HOSTNAME == "Lind" and change of hostname is not allowed
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let mut buf = vec![0u8; 5];
@@ -1229,7 +1229,7 @@ pub mod net_tests {
             addr: interface::V4Addr,
         }
 
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let dnssocket = cage.socket_syscall(AF_INET, SOCK_DGRAM, 0);
@@ -1307,7 +1307,7 @@ pub mod net_tests {
         let clientsockfilename = "/client.sock";
         let serversockfilename = "/server.sock";
 
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //both the server and the socket are run from this file
@@ -1440,7 +1440,7 @@ pub mod net_tests {
     epoll_wait_syscall(). It handles the events based on their types (EPOLLIN or EPOLLOUT) and performs the necessary operations
     like accepting new connections, sending/receiving data, and modifying the event flags */
     pub fn ut_lind_net_epoll() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         let filefd = cage.open_syscall("/netepolltest.txt", O_CREAT | O_EXCL | O_RDWR, S_IRWXA);

@@ -1,3 +1,6 @@
+/* A.W.: 
+*   Commented
+*/
 #![feature(lazy_cell)]
 #![feature(rustc_private)] //for private crate imports for tests
 #![feature(vec_into_raw_parts)]
@@ -103,7 +106,7 @@ update [hostsource] [linddest]  : Copies files from the host file system into th
 }
 
 fn main() {
-    lindrustinit(0); // no verbosity
+    lindrustinit(0, true); // no verbosity
     let mut args = env::args();
     let utilcage = Cage{cageid: 0,
                         cwd: interface::RustLock::new(interface::RustRfc::new(interface::RustPathBuf::from("/"))),
@@ -170,11 +173,11 @@ fn main() {
         "format" => {
             lind_deltree(&utilcage, "/"); //This doesn't actually fully remove all of the linddata files... TODO: debug
 
-            let mut logobj = LOGMAP.write();
-            let log = logobj.take().unwrap();
-            let _close = log.close().unwrap();
-            drop(logobj);
-            let _logremove = interface::removefile(LOGFILENAME.to_string());
+            // let mut logobj = LOGMAP.write();
+            // let log = logobj.take().unwrap();
+            // let _close = log.close().unwrap();
+            // drop(logobj);
+            // let _logremove = interface::removefile(LOGFILENAME.to_string());
 
             format_fs();
             return;

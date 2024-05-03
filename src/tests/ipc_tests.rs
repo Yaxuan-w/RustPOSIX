@@ -19,7 +19,7 @@ pub mod ipc_tests {
         let byte_chunk: usize = 131072; // 128 KB
         let num_writes: usize = 8192; // 8 KB 
 
-        lindrustinit(0);
+        lindrustinit(0, false);
 
         let cage1 = interface::cagetable_getref(1);
 
@@ -81,7 +81,7 @@ pub mod ipc_tests {
         let clientsockfilename = "/client.sock";
         let serversockfilename = "/server.sock";
 
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
 
         //both the server and the socket are run from this file
@@ -210,7 +210,7 @@ pub mod ipc_tests {
     } 
     
      pub fn ut_lind_ipc_socketpair() {
-        lindrustinit(0);
+        lindrustinit(0, false);
         let cage = interface::cagetable_getref(1);
         let mut socketpair = interface::SockPair::default();
         assert_eq!(Cage::socketpair_syscall(cage.clone(), AF_UNIX, SOCK_STREAM, 0, &mut socketpair), 0);
