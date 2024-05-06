@@ -1644,11 +1644,17 @@ impl Cage {
                             *   When doing read -- read from a file and store in the memroy
                             *   Directly return start addr of that file?
                             */
-                            if let Ok(byteread) = fobj.readat(addr, filesize, 0) {
-                                return addr as i32;
+                            if addr.is_null() {
+                                if let Ok(fileread) = fobj.readfile_to_new_bytes() {
+                                    return fileread.as_ptr() as i32;
+                                } else {
+                                    return syscall_error(Errno::ENXIO, "mmap", "Addresses in the range [off,off+len) are invalid for the object specified by fildes.");
+                                }
                             } else {
-                                return 0;
+                                let _ = fobj.readat(addr, filesize, 0);
+                                return addr as i32;
                             }
+                            
                             /* A.W.：
                             *   When doing write -- write to a file in the memroy
                             *   Same as writeat() and return start addr of that file
