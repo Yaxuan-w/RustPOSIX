@@ -1644,8 +1644,8 @@ impl Cage {
                             *   When doing read -- read from a file and store in the memroy
                             *   Directly return start addr of that file?
                             */
-                            if let Ok(mut file) = fobj.readfile_to_new_bytes() {
-                                return file.as_mut_ptr() as i32;
+                            if let Ok(byteread) = fobj.readat(addr, filesize, 0) {
+                                return addr as i32;
                             } else {
                                 return 0;
                             }
