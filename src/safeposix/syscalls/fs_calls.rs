@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 
+use std::string;
+
 // File system related system calls
 use crate::interface::{self, EmulatedFile};
+use crate::interface::*;
 use crate::safeposix::cage::{*, FileDescriptor::*};
 use crate::safeposix::filesystem::*;
 use crate::safeposix::net::{NET_METADATA};
@@ -1601,7 +1604,7 @@ impl Cage {
     
     /* A.W.:
     *   [Wait to do]
-    *   - Need to verify detailed
+    *   - Need to implement mmap manage ...? link fd with memory region
     */
     pub fn mmap_syscall(&self, addr: *mut u8, len: usize, prot: i32, flags: i32, fildes: i32, off: i64) -> i32 {
         if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
@@ -1611,7 +1614,16 @@ impl Cage {
         }
 
         if 0 != flags & MAP_ANONYMOUS {
-            return interface::libc_mmap(addr, len, prot, flags, -1, 0);
+            if addr.is_null() {
+                let stringbuf = vec![0; len];
+                return stringbuf.as_ptr() as i32;
+            } else {
+                let _buf = unsafe {
+                    assert!(!addr.is_null());
+                    interface::slice::from_raw_parts_mut(addr, len)
+                };
+                return addr as i32;
+            }
         }
 
         let checkedfd = self.get_filedescriptor(fildes).unwrap();
@@ -1648,11 +1660,12 @@ impl Cage {
                                 if let Ok(fileread) = fobj.readfile_to_new_bytes() {
                                     return fileread.as_ptr() as i32;
                                 } else {
-                                    return syscall_error(Errno::ENXIO, "mmap", "Addresses in the range [off,off+len) are invalid for the object specified by fildes.");
+                                    // [Need to fix]
+                                    return syscall_error(Errno::ENXIO, "mmap", "Readfile_to_new_bytes fail.");
                                 }
                             } else {
                                 let _ = fobj.readat(addr, filesize, 0);
-                                return addr as i32;
+                                return ((addr as i64) & 0xffffffff) as i32;
                             }
                             
                             /* A.W.：
@@ -1677,6 +1690,10 @@ impl Cage {
 
     //------------------------------------MUNMAP SYSCALL------------------------------------
     
+    /* A.W.:
+    *   [Need to develop] 
+    *   Use mmap manage ...? to set flag and maintain the mem region
+    */
     pub fn munmap_syscall(&self, addr: *mut u8, len: usize) -> i32 {
         if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
         //NaCl's munmap implementation actually just writes over the previously mapped data with PROT_NONE
