@@ -700,7 +700,7 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
         *   Add initialization steps
         */
         let load_path = "/home/lind/lind_project/src/safeposix-rust/test.txt";
-        let relative_path = "/home/lind/lind_project/src/safeposix-rust";
+        let relative_path = "/home/lind/lind_project/src/safeposix-rust/loading";
         // let load_path = "/home/RustPOSIX/test.txt";
         // let relative_path = "/home/RustPOSIX";
 
