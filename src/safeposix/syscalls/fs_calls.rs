@@ -1654,33 +1654,11 @@ impl Cage {
                             // Treat as read / write for mmap
                             /* A.W.：
                             *   When doing read -- read from a file and store in the memroy
-                            *   [Need to do]
                             * 
                             */
-                            // if addr.is_null() {
-                            //     if let Ok(fileread) = fobj.readfile_to_new_bytes() {
-                            //         let mmapaddr = fileread.as_ptr();
-                            //         if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
-                            //             *mmapAddr = mmapaddr as usize;
-                            //         }
-                            //         return mmapaddr as i32;
-                            //     } else {
-                            //         // [Need to fix]
-                            //         return syscall_error(Errno::ENXIO, "mmap", "Readfile_to_new_bytes fail.");
-                            //     }
-                            // } else {
-                            //     let _ = fobj.readat(addr, filesize, off);
-                            //     if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
-                            //         *mmapAddr = addr as usize;
-                            //     }
-                            //     return ((addr as i64) & 0xffffffff) as i32;
-                            // }
                             if addr.is_null() {
                                 if let Ok(fileread) = fobj.readfile_to_new_bytes() {
                                     let mmapaddr = fileread.as_ptr();
-                                    // if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
-                                    //     *mmapAddr = mmapaddr as usize;
-                                    // }
                                     return mmapaddr as i32;
                                 } else {
                                     // [Need to fix]
@@ -1689,17 +1667,10 @@ impl Cage {
                             } else {
                                 if unsafe { mprotect(addr as *mut c_void, filesize, PROT_READ | PROT_WRITE) } == 0 {
                                     let _ = fobj.readat(addr, filesize, off as usize);
-                                    // if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
-                                    //     *mmapAddr = addr as usize;
-                                    // }
                                     return ((addr as i64) & 0xffffffff) as i32;
                                 }
                                 else {return syscall_error(Errno::ENXIO, "mmap", "Mprotect fails.");}
                             }
-                            /* A.W.：
-                            *   When doing write -- write to a file in the memroy
-                            *   Same as writeat() and return start addr of that file
-                            */
 
                         }
 
@@ -1727,7 +1698,11 @@ impl Cage {
         if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
         //NaCl's munmap implementation actually just writes over the previously mapped data with PROT_NONE
         //This frees all of the resources except page table space, and is put inside safeposix for consistency
-        interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
+        // interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
+        unsafe {
+            mprotect(addr as *mut c_void, len, PROT_NONE)
+        };
+        return ((addr as i64) & 0xffffffff) as i32;
     }
 
     //------------------------------------FLOCK SYSCALL------------------------------------
