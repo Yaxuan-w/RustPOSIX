@@ -55,19 +55,19 @@ fn assert_is_allowed_filename(filename: &String) {
         panic!("ArgumentError: Filename exceeds maximum length.")
     }
 
-    if !filename.chars().all(is_allowed_char) {
-        println!("'{}'", filename);
-        panic!("ArgumentError: Filename has disallowed characters.")
-    }
+    // if !filename.chars().all(is_allowed_char) {
+    //     println!("'{}'", filename);
+    //     panic!("ArgumentError: Filename has disallowed characters.")
+    // }
 
-    match filename.as_str() {
-        "" | "." | ".." => panic!("ArgumentError: Illegal filename."),
-        _ => {}
-    }
+    // match filename.as_str() {
+    //     "" | "." | ".." => panic!("ArgumentError: Illegal filename."),
+    //     _ => {}
+    // }
 
-    if filename.starts_with(".") {
-        panic!("ArgumentError: Filename cannot start with a period.")
-    }
+    // if filename.starts_with(".") {
+    //     panic!("ArgumentError: Filename cannot start with a period.")
+    // }
 }
 
 
