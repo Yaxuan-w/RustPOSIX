@@ -323,7 +323,27 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
             *   [Need to do] 
             *   - Check if it's a file
             */
+            //Walk the file tree to get inode from path
+            if let Some(inodenum) = metawalk(&ancestor) {
+                let inodeobj = FS_METADATA.inodetable.get(&inodenum).unwrap();
+                
 
+                //delegate the rest of populating statbuf to the relevant helper
+                match &*inodeobj {
+                    Inode::File(f) => {
+                        break;
+                    },
+                    Inode::CharDev(f) => {
+                        break;
+                    },
+                    Inode::Socket(f) => {
+                        panic!("Socket in loading phase");
+                    },
+                    Inode::Dir(f) => {
+                        continue;
+                    },
+                }
+            }
             let _ = create_missing_directory(ancestor.to_str().unwrap(), cageid);
         }
 
