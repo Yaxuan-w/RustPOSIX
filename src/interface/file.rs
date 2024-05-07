@@ -75,7 +75,7 @@ fn assert_is_allowed_filename(filename: &String) {
 pub struct Memory {
     pub base_address: RustMutex<usize>,
     pub memory_list: RustMutex<Vec<usize>>,
-    pub mmap_addr: RustMutex<usize>,
+    // pub mmap_addr: RustMutex<usize>,
 }
 
 // We want to Memory to be a global variable 
@@ -93,7 +93,7 @@ pub static GLOBAL_MEMORY: RustLazyGlobal<Memory> = RustLazyGlobal::new(|| {
     Memory {
         base_address: RustMutex::new(0),
         memory_list: RustMutex::new(vec![0; num_pages]),
-        mmap_addr: RustMutex::new(0),
+        // mmap_addr: RustMutex::new(0),
     }
 });
 

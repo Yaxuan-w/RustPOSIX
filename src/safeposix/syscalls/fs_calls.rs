@@ -1678,9 +1678,9 @@ impl Cage {
                             if addr.is_null() {
                                 if let Ok(fileread) = fobj.readfile_to_new_bytes() {
                                     let mmapaddr = fileread.as_ptr();
-                                    if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
-                                        *mmapAddr = mmapaddr as usize;
-                                    }
+                                    // if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
+                                    //     *mmapAddr = mmapaddr as usize;
+                                    // }
                                     return mmapaddr as i32;
                                 } else {
                                     // [Need to fix]
@@ -1689,9 +1689,9 @@ impl Cage {
                             } else {
                                 if unsafe { mprotect(addr as *mut c_void, filesize, PROT_READ) } == 0 {
                                     let _ = fobj.readat(addr, filesize, off as usize);
-                                    if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
-                                        *mmapAddr = addr as usize;
-                                    }
+                                    // if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
+                                    //     *mmapAddr = addr as usize;
+                                    // }
                                     return ((addr as i64) & 0xffffffff) as i32;
                                 }
                                 else {return syscall_error(Errno::ENXIO, "mmap", "Mprotect fails.");}
