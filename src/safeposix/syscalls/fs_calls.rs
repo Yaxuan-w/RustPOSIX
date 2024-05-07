@@ -1687,7 +1687,7 @@ impl Cage {
                                     return syscall_error(Errno::ENXIO, "mmap", "Readfile_to_new_bytes fail.");
                                 }
                             } else {
-                                if unsafe { mprotect(addr as *mut c_void, filesize, PROT_READ) } == 0 {
+                                if unsafe { mprotect(addr as *mut c_void, filesize, PROT_READ | PROT_WRITE) } == 0 {
                                     let _ = fobj.readat(addr, filesize, off as usize);
                                     // if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
                                     //     *mmapAddr = addr as usize;
