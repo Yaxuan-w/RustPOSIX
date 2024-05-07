@@ -17,6 +17,7 @@ use std::ptr::copy;
 
 use std::os::unix::io::{AsRawFd, RawFd};
 // use libc::{mmap, mremap, munmap, PROT_READ, PROT_WRITE, MAP_SHARED, MREMAP_MAYMOVE, off64_t};
+pub use libc::mprotect;
 pub use std::ffi::c_void;
 use std::convert::TryInto;
 use crate::interface::errnos::{Errno, syscall_error};
@@ -74,6 +75,7 @@ fn assert_is_allowed_filename(filename: &String) {
 pub struct Memory {
     pub base_address: RustMutex<usize>,
     pub memory_list: RustMutex<Vec<usize>>,
+    pub mmap_addr: RustMutex<usize>,
 }
 
 // We want to Memory to be a global variable 
@@ -91,6 +93,7 @@ pub static GLOBAL_MEMORY: RustLazyGlobal<Memory> = RustLazyGlobal::new(|| {
     Memory {
         base_address: RustMutex::new(0),
         memory_list: RustMutex::new(vec![0; num_pages]),
+        mmap_addr: RustMutex::new(0),
     }
 });
 

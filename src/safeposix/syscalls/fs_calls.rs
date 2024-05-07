@@ -10,7 +10,7 @@ use crate::safeposix::filesystem::*;
 use crate::safeposix::net::{NET_METADATA};
 use crate::safeposix::shm::*;
 use crate::safeposix::cage::Errno::EINVAL;
-use super::fs_constants::*;
+use super::{fs_constants::*, PROT_READ};
 use super::sys_constants::*;
 
 impl Cage {
@@ -1654,24 +1654,53 @@ impl Cage {
                             // Treat as read / write for mmap
                             /* A.W.：
                             *   When doing read -- read from a file and store in the memroy
-                            *   Directly return start addr of that file?
+                            *   [Need to do]
+                            * 
                             */
+                            // if addr.is_null() {
+                            //     if let Ok(fileread) = fobj.readfile_to_new_bytes() {
+                            //         let mmapaddr = fileread.as_ptr();
+                            //         if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
+                            //             *mmapAddr = mmapaddr as usize;
+                            //         }
+                            //         return mmapaddr as i32;
+                            //     } else {
+                            //         // [Need to fix]
+                            //         return syscall_error(Errno::ENXIO, "mmap", "Readfile_to_new_bytes fail.");
+                            //     }
+                            // } else {
+                            //     let _ = fobj.readat(addr, filesize, off);
+                            //     if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
+                            //         *mmapAddr = addr as usize;
+                            //     }
+                            //     return ((addr as i64) & 0xffffffff) as i32;
+                            // }
                             if addr.is_null() {
                                 if let Ok(fileread) = fobj.readfile_to_new_bytes() {
-                                    return fileread.as_ptr() as i32;
+                                    let mmapaddr = fileread.as_ptr();
+                                    if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
+                                        *mmapAddr = mmapaddr as usize;
+                                    }
+                                    return mmapaddr as i32;
                                 } else {
                                     // [Need to fix]
                                     return syscall_error(Errno::ENXIO, "mmap", "Readfile_to_new_bytes fail.");
                                 }
                             } else {
-                                let _ = fobj.readat(addr, filesize, 0);
-                                return ((addr as i64) & 0xffffffff) as i32;
+                                if unsafe { mprotect(addr as *mut c_void, filesize, PROT_READ) } == 0 {
+                                    let _ = fobj.readat(addr, filesize, off as usize);
+                                    if let Ok(mut mmapAddr) = interface::GLOBAL_MEMORY.mmap_addr.lock() {
+                                        *mmapAddr = addr as usize;
+                                    }
+                                    return ((addr as i64) & 0xffffffff) as i32;
+                                }
+                                else {return syscall_error(Errno::ENXIO, "mmap", "Mprotect fails.");}
                             }
-                            
                             /* A.W.：
                             *   When doing write -- write to a file in the memroy
                             *   Same as writeat() and return start addr of that file
                             */
+
                         }
 
                         Inode::CharDev(_chardev_inode_obj) => {
