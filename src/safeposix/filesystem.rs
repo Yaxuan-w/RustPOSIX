@@ -279,7 +279,7 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         let flags = O_RDWR | O_CREAT | O_APPEND;
         match metawalkandparent(truepath.as_path()) {
             (None, None) => {
-                panic!("Cannot create files in loading phase");
+                panic!("Cannot create files in loading phase: {:?}", truepath.as_path());
             }
             (None, Some(pardirinode)) => {
                 let mode = 0o777;
