@@ -276,7 +276,7 @@ fn create_missing_directory(path: &str, cageid: u64) -> std::io::Result<()> {
         }
 
         (Some(_), ..) => {
-            panic!("pathname already exists, cannot create directory");
+            panic!("pathname already exists, cannot create directory {:?}",truepath.as_path());
         }
     }
 }
@@ -309,15 +309,8 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
     // Read contents into EmulatedFile according to file information entry
     for (filename, filesize, filepath) in file_entries {
         let abs_content_path = format!("{}{}", content_path, filepath);
-        let mut contentfile = interface::File::open(abs_content_path)?;
-        let mut filedata = Vec::new();
-        let _ = contentfile.read_to_end(&mut filedata)?;
-        
-        // Create a new emulated file and write the contents
-        let mut emulated_file = interface::openfile(filename.clone()).unwrap();
-        let _ = emulated_file.writefile_from_bytes(&filedata).unwrap();
-        
-        // Add to metadata
+
+        // Adding dir
         let cage = interface::cagetable_getref(cageid);
         let truepath = normpath(convpath(filepath), &cage);
         if filepath.len() == 0 { panic!("No path in loading phase"); }
@@ -331,8 +324,19 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
             *   - Check if it's a file
             */
 
-            create_missing_directory(ancestor.to_str().unwrap(), cageid);
+            let _ = create_missing_directory(ancestor.to_str().unwrap(), cageid);
         }
+
+        let mut contentfile = interface::File::open(abs_content_path)?;
+        let mut filedata = Vec::new();
+        let _ = contentfile.read_to_end(&mut filedata)?;
+        
+        // Create a new emulated file and write the contents
+        let mut emulated_file = interface::openfile(filename.clone()).unwrap();
+        let _ = emulated_file.writefile_from_bytes(&filedata).unwrap();
+        
+        // Add to metadata
+        
 
         
         let (fd, guardopt) = cage.get_next_fd(None);
