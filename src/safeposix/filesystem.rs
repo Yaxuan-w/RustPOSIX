@@ -246,7 +246,7 @@ fn create_missing_directory(path: &interface::RustPath, cageid: u64) -> std::io:
         match metawalkandparent(truepath.as_path()) {
             //If neither the file nor parent exists
             (None, None) => {
-                panic!("a directory component in pathname does not exist or is a dangling symbolic link in loading phase")
+                panic!("a directory component in pathname does not exist or is a dangling symbolic link in loading phase{:?}", truepath.as_path())
             }
 
             //If the file doesn't exist but the parent does
