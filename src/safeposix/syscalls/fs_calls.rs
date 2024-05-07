@@ -1606,7 +1606,7 @@ impl Cage {
     *   [Wait to do]
     *   - Need to implement mmap manage ...? link fd with memory region
     */
-    pub fn mmap_syscall(&self, addr: *mut u8, len: usize, prot: i32, flags: i32, fildes: i32, off: i64) -> i32 {
+    pub fn mmap_syscall(&self, addr: *mut u8, len: usize, _prot: i32, flags: i32, fildes: i32, off: i64) -> i32 {
         if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
 
         if 0 == flags & (MAP_PRIVATE | MAP_SHARED) {

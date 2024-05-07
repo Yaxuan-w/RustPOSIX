@@ -229,11 +229,65 @@ pub fn format_fs() {
 *       2) a dir path that contains the actual file needs to be read, parameters: actual path = content_path + relative path 
 *           (from input_path)
 */
+fn create_missing_directory(path: &interface::RustPath, cageid: u64) -> std::io::Result<()> {
+    // Recursively create parent directory if missing
+    if !path.exists() {
+        create_missing_directory(path.parent().unwrap(), cageid)?;
+        // Then create this directory
+        let mode = 0o777; // or any other default mode
+        if path.as_os_str().len() == 0 { panic!("given path was null in loading phase"); }
+        let cage = interface::cagetable_getref(cageid);
+        let pathstr = path.to_str().unwrap();
+        let truepath = normpath(convpath(pathstr), &cage);
+
+        //pass the metadata to this helper. If passed table is none, then create new instance
+        let metadata = &FS_METADATA;
+
+        match metawalkandparent(truepath.as_path()) {
+            //If neither the file nor parent exists
+            (None, None) => {
+                panic!("a directory component in pathname does not exist or is a dangling symbolic link in loading phase")
+            }
+
+            //If the file doesn't exist but the parent does
+            (None, Some(pardirinode)) => {
+                let filename = truepath.file_name().unwrap().to_str().unwrap().to_string(); //for now we assume this is sane, but maybe this should be checked later
+
+                let effective_mode = S_IFDIR as u32 | mode;
+
+                //assert sane mode bits
+                if mode & (S_IRWXA | S_FILETYPEFLAGS as u32) != mode {
+                    panic!("Mode bits were not sane in loading phase");
+                }
+
+                let newinodenum = FS_METADATA.nextinode.fetch_add(1, interface::RustAtomicOrdering::Relaxed); //fetch_add returns the previous value, which is the inode number we want
+                let time = interface::timestamp(); //We do a real timestamp now
+
+                let newinode = Inode::Dir(DirectoryInode {
+                    size: 0, uid: DEFAULT_UID, gid: DEFAULT_GID,
+                    mode: effective_mode, linkcount: 3, refcount: 0, //2 because ., and .., as well as reference in parent directory
+                    atime: time, ctime: time, mtime: time, 
+                    filename_to_inode_dict: init_filename_to_inode_dict(newinodenum, pardirinode)
+                });
+
+                if let Inode::Dir(ref mut parentdir) = *(metadata.inodetable.get_mut(&pardirinode).unwrap()) {
+                    parentdir.filename_to_inode_dict.insert(filename, newinodenum);
+                    parentdir.linkcount += 1;
+                } //insert a reference to the file in the parent directory
+                else {unreachable!();}
+                metadata.inodetable.insert(newinodenum, newinode);
+                return Ok(()); 
+            }
+
+            (Some(_), ..) => {
+                panic!("pathname already exists, cannot create directory");
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Result<()> {
-    /* A.W.:
-    *   Loading File is consisted by two parts: (filename filesize filepath;filename2 filesize2 filepath2;...)
-    *   "not whitespace between size and next filename" followed by contents
-    */
     // Open the loading file
     let file = interface::File::open(input_path)?;
     let mut reader = interface::BufReader::new(file);
@@ -279,7 +333,9 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         let flags = O_RDWR | O_CREAT | O_APPEND;
         match metawalkandparent(truepath.as_path()) {
             (None, None) => {
-                panic!("Cannot create files in loading phase: {:?}", truepath.as_path());
+                // panic!("Cannot create files in loading phase: {:?}", truepath.as_path());
+                create_missing_directory(truepath.parent().unwrap(), cageid)?;
+                continue;
             }
             (None, Some(pardirinode)) => {
                 let mode = 0o777;
