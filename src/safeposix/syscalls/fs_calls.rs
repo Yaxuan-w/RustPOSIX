@@ -1665,7 +1665,7 @@ impl Cage {
                                     return syscall_error(Errno::ENXIO, "mmap", "Readfile_to_new_bytes fail.");
                                 }
                             } else {
-                                if unsafe { mprotect(addr as *mut c_void, filesize, PROT_READ | PROT_WRITE) } == 0 {
+                                if unsafe { mprotect(addr as *mut c_void, filesize, PROT_READ | PROT_WRITE | PROT_EXEC) } == 0 {
                                     let _ = fobj.readat(addr, filesize, off as usize);
                                     return ((addr as i64) & 0xffffffff) as i32;
                                 }

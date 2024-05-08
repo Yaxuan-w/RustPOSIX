@@ -319,16 +319,9 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         for component in truepath.parent().unwrap().components() {
             ancestor.push(component);
 
-            /* A.W.:
-            *   [Need to do] 
-            *   - Check if it's a file
-            */
             //Walk the file tree to get inode from path
             if let Some(inodenum) = metawalk(&ancestor) {
                 let inodeobj = FS_METADATA.inodetable.get(&inodenum).unwrap();
-                
-
-                //delegate the rest of populating statbuf to the relevant helper
                 match &*inodeobj {
                     Inode::File(f) => {
                         break;
@@ -354,10 +347,6 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         // Create a new emulated file and write the contents
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
         let _ = emulated_file.writefile_from_bytes(&filedata).unwrap();
-        
-        // Add to metadata
-        
-
         
         let (fd, guardopt) = cage.get_next_fd(None);
         if fd < 0 { panic!("Cannot get fd table in loading phase"); }
