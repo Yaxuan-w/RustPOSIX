@@ -1646,7 +1646,8 @@ impl Cage {
                             /* A.W.:
                             *   mmap region without fd and then do read / wrtie to that region
                             */
-                            let mapaddr = unsafe{libc::mmap(addr as *mut c_void, len, prot, MAP_ANONYMOUS | MAP_PRIVATE, -1, off)};
+                            let addr_para = addr as *mut c_void;
+                            let mapaddr = unsafe{libc::mmap(addr_para, len, prot, MAP_ANONYMOUS | MAP_PRIVATE, -1, off)};
                             // let mapaddr = interface::libc_mmap(addr, len, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1, off);
                             let _ = fobj.readat(mapaddr as *mut u8, len, off as usize);
                             let retaddr = ((mapaddr as i64) & 0xffffffff) as i32;
