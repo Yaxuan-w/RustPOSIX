@@ -323,7 +323,7 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
             if let Some(inodenum) = metawalk(&ancestor) {
                 let inodeobj = FS_METADATA.inodetable.get(&inodenum).unwrap();
                 match &*inodeobj {
-                    Inode::Dir(f) => {
+                    Inode::Dir(_f) => {
                         continue;
                     },
                     _ => {

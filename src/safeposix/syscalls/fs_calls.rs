@@ -1647,7 +1647,7 @@ impl Cage {
                             *   mmap region without fd and then do read / wrtie to that region
                             */
                             let mapaddr = interface::libc_mmap(addr, len, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1, off);
-                            let _ = fobj.readat(mapaddr as *mut u8, filesize, off as usize);
+                            let _ = fobj.readat(addr, filesize, off as usize);
                             return mapaddr;
                         }
 
