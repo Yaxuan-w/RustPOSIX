@@ -1606,105 +1606,112 @@ impl Cage {
     *   [Wait to do]
     *   - Need to implement mmap manage ...? link fd with memory region
     */
-    pub fn mmap_syscall(&self, addr: *mut u8, len: usize, _prot: i32, flags: i32, fildes: i32, off: i64) -> i32 {
-        if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
+    // pub fn mmap_syscall(&self, addr: *mut u8, len: usize, _prot: i32, flags: i32, fildes: i32, off: i64) -> i32 {
+    //     if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
 
-        if 0 == flags & (MAP_PRIVATE | MAP_SHARED) {
-            syscall_error(Errno::EINVAL, "mmap", "The value of flags is invalid (neither MAP_PRIVATE nor MAP_SHARED is set)");
-        }
+    //     if 0 == flags & (MAP_PRIVATE | MAP_SHARED) {
+    //         syscall_error(Errno::EINVAL, "mmap", "The value of flags is invalid (neither MAP_PRIVATE nor MAP_SHARED is set)");
+    //     }
 
-        if 0 != flags & MAP_ANONYMOUS {
-            if addr.is_null() {
-                let stringbuf = vec![0; len];
-                return stringbuf.as_ptr() as i32;
-            } else {
-                let _buf = unsafe {
-                    assert!(!addr.is_null());
-                    interface::slice::from_raw_parts_mut(addr, len)
-                };
-                return addr as i32;
-            }
-        }
+    //     if 0 != flags & MAP_ANONYMOUS {
+    //         if addr.is_null() {
+    //             let stringbuf = vec![0; len];
+    //             return stringbuf.as_ptr() as i32;
+    //         } else {
+    //             let _buf = unsafe {
+    //                 assert!(!addr.is_null());
+    //                 interface::slice::from_raw_parts_mut(addr, len)
+    //             };
+    //             return addr as i32;
+    //         }
+    //     }
 
-        let checkedfd = self.get_filedescriptor(fildes).unwrap();
-        let mut unlocked_fd = checkedfd.write();
-        if let Some(filedesc_enum) = &mut *unlocked_fd {
+    //     let checkedfd = self.get_filedescriptor(fildes).unwrap();
+    //     let mut unlocked_fd = checkedfd.write();
+    //     if let Some(filedesc_enum) = &mut *unlocked_fd {
 
-            //confirm fd type is mappable
-            match filedesc_enum {
-                File(ref mut normalfile_filedesc_obj) => {
-                    let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
+    //         //confirm fd type is mappable
+    //         match filedesc_enum {
+    //             File(ref mut normalfile_filedesc_obj) => {
+    //                 let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
 
-                    //confirm inode type is mappable
-                    match &*inodeobj {
-                        Inode::File(normalfile_inode_obj) => {
-                            //if we want to write our changes back to the file the file needs to be open for reading and writing
-                            if (flags & MAP_SHARED != 0) && (flags & PROT_WRITE != 0) && (normalfile_filedesc_obj.flags & O_RDWR != 0) {
-                                return syscall_error(Errno::EACCES, "mmap", "file descriptor is not open RDWR, but MAP_SHARED and PROT_WRITE are set");
-                            }
-                            let filesize = normalfile_inode_obj.size;
-                            if off < 0 || off > filesize as i64 {
-                                return syscall_error(Errno::ENXIO, "mmap", "Addresses in the range [off,off+len) are invalid for the object specified by fildes.");
-                            }
-                            //because of NaCl's internal workings we must allow mappings to extend past the end of a file
-                            let fobj = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
-                            //we cannot mmap a rust file in quite the right way so we retrieve the fd number from it
-                            //this is the system fd number--the number of the lind.<inodenum> file in our host system
+    //                 //confirm inode type is mappable
+    //                 match &*inodeobj {
+    //                     Inode::File(normalfile_inode_obj) => {
+    //                         //if we want to write our changes back to the file the file needs to be open for reading and writing
+    //                         if (flags & MAP_SHARED != 0) && (flags & PROT_WRITE != 0) && (normalfile_filedesc_obj.flags & O_RDWR != 0) {
+    //                             return syscall_error(Errno::EACCES, "mmap", "file descriptor is not open RDWR, but MAP_SHARED and PROT_WRITE are set");
+    //                         }
+    //                         let filesize = normalfile_inode_obj.size;
+    //                         if off < 0 || off > filesize as i64 {
+    //                             return syscall_error(Errno::ENXIO, "mmap", "Addresses in the range [off,off+len) are invalid for the object specified by fildes.");
+    //                         }
+    //                         //because of NaCl's internal workings we must allow mappings to extend past the end of a file
+    //                         let fobj = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
+    //                         //we cannot mmap a rust file in quite the right way so we retrieve the fd number from it
+    //                         //this is the system fd number--the number of the lind.<inodenum> file in our host system
 
-                            // Treat as read / write for mmap
-                            /* A.W.：
-                            *   When doing read -- read from a file and store in the memroy
-                            * 
-                            */
-                            if addr.is_null() {
-                                if let Ok(fileread) = fobj.readfile_to_new_bytes() {
-                                    let mmapaddr = fileread.as_ptr();
-                                    return mmapaddr as i32;
-                                } else {
-                                    // [Need to fix]
-                                    return syscall_error(Errno::ENXIO, "mmap", "Readfile_to_new_bytes fail.");
-                                }
-                            } else {
-                                if unsafe { mprotect(addr as *mut c_void, filesize, PROT_READ | PROT_WRITE | PROT_EXEC) } == 0 {
-                                    let _ = fobj.readat(addr, filesize, off as usize);
-                                    return ((addr as i64) & 0xffffffff) as i32;
-                                }
-                                else {return syscall_error(Errno::ENXIO, "mmap", "Mprotect fails.");}
-                            }
+    //                         // Treat as read / write for mmap
+    //                         /* A.W.：
+    //                         *   When doing read -- read from a file and store in the memroy
+    //                         * 
+    //                         */
+    //                         if addr.is_null() {
+    //                             if let Ok(fileread) = fobj.readfile_to_new_bytes() {
+    //                                 let mmapaddr = fileread.as_ptr();
+    //                                 return mmapaddr as i32;
+    //                             } else {
+    //                                 // [Need to fix]
+    //                                 return syscall_error(Errno::ENXIO, "mmap", "Readfile_to_new_bytes fail.");
+    //                             }
+    //                         } else {
+    //                             if unsafe { mprotect(addr as *mut c_void, filesize, PROT_READ | PROT_WRITE | PROT_EXEC) } == 0 {
+    //                                 let _ = fobj.readat(addr, filesize, off as usize);
+    //                                 return ((addr as i64) & 0xffffffff) as i32;
+    //                             }
+    //                             else {return syscall_error(Errno::ENXIO, "mmap", "Mprotect fails.");}
+    //                         }
 
-                        }
+    //                     }
 
-                        Inode::CharDev(_chardev_inode_obj) => {
-                            syscall_error(Errno::EOPNOTSUPP, "mmap", "lind currently does not support mapping character files")
-                        }
+    //                     Inode::CharDev(_chardev_inode_obj) => {
+    //                         syscall_error(Errno::EOPNOTSUPP, "mmap", "lind currently does not support mapping character files")
+    //                     }
 
-                        _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
-                    }
-                }
-                _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
-            }
-        } else {
-            syscall_error(Errno::EBADF, "mmap", "invalid file descriptor")
-        }
+    //                     _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
+    //                 }
+    //             }
+    //             _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
+    //         }
+    //     } else {
+    //         syscall_error(Errno::EBADF, "mmap", "invalid file descriptor")
+    //     }
+    // }
+
+    pub fn mmap_syscall(&self, addr: *mut u8, len: usize, prot: i32, flags: i32, fildes: i32, off: i64) -> i32 {
+        interface::libc_mmap(addr, len, prot, flags, fildes, off)
     }
-
     //------------------------------------MUNMAP SYSCALL------------------------------------
     
     /* A.W.:
     *   [Need to develop] 
     *   Use mmap manage ...? to set flag and maintain the mem region
     */
+    // pub fn munmap_syscall(&self, addr: *mut u8, len: usize) -> i32 {
+    //     if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
+    //     //NaCl's munmap implementation actually just writes over the previously mapped data with PROT_NONE
+    //     //This frees all of the resources except page table space, and is put inside safeposix for consistency
+    //     // interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
+    //     unsafe {
+    //         mprotect(addr as *mut c_void, len, PROT_NONE)
+    //     };
+    //     return ((addr as i64) & 0xffffffff) as i32;
+    // }
+
     pub fn munmap_syscall(&self, addr: *mut u8, len: usize) -> i32 {
         if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
-        //NaCl's munmap implementation actually just writes over the previously mapped data with PROT_NONE
-        //This frees all of the resources except page table space, and is put inside safeposix for consistency
-        // interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
-        unsafe {
-            mprotect(addr as *mut c_void, len, PROT_NONE)
-        };
-        return ((addr as i64) & 0xffffffff) as i32;
+        interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
     }
-
     //------------------------------------FLOCK SYSCALL------------------------------------
 
     pub fn flock_syscall(&self, fd: i32, operation: i32) -> i32 {
