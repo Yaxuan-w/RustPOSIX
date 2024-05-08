@@ -17,7 +17,7 @@ use std::ptr::copy;
 
 use std::os::unix::io::{AsRawFd, RawFd};
 // use libc::{mmap, mremap, munmap, PROT_READ, PROT_WRITE, MAP_SHARED, MREMAP_MAYMOVE, off64_t};
-pub use libc::mprotect;
+pub use libc::{mprotect, mmap, memcpy};
 pub use std::ffi::c_void;
 use std::convert::TryInto;
 use crate::interface::errnos::{Errno, syscall_error};
@@ -217,7 +217,8 @@ impl EmulatedFile {
                     remain_len -= bytes_to_copy;
                     
                     unsafe {
-                        copy(ptr_mem, ptr, bytes_to_copy);
+                        // copy(ptr_mem, ptr, bytes_to_copy);
+                        libc::memcpy(ptr as *mut c_void, ptr_mem as *mut c_void, bytes_to_copy);
                         ptr = ptr.add(bytes_to_copy);
                     }
 
