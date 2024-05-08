@@ -323,18 +323,12 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
             if let Some(inodenum) = metawalk(&ancestor) {
                 let inodeobj = FS_METADATA.inodetable.get(&inodenum).unwrap();
                 match &*inodeobj {
-                    Inode::File(f) => {
-                        break;
-                    },
-                    Inode::CharDev(f) => {
-                        break;
-                    },
-                    Inode::Socket(f) => {
-                        panic!("Socket in loading phase");
-                    },
                     Inode::Dir(f) => {
                         continue;
                     },
+                    _ => {
+                        break;
+                    }
                 }
             }
             let _ = create_missing_directory(ancestor.to_str().unwrap(), cageid);
