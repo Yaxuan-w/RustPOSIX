@@ -1653,7 +1653,8 @@ impl Cage {
 
                             let mapaddr = unsafe{libc::mmap(addr_para, len, prot, MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED, -1, off)};
                             // let mapaddr = interface::libc_mmap(addr, len, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1, off);
-                            let _ = fobj.readat(mapaddr as *mut u8, len, off as usize);
+                            let map_addr = mapaddr as *mut u8;
+                            let _ = fobj.readat(map_addr, len, off as usize);
                             let retaddr = ((mapaddr as i64) & 0xffffffff) as i32;
                             return retaddr;
                         }
