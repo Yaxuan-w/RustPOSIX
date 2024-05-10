@@ -1661,6 +1661,7 @@ impl Cage {
                             if mapaddr == -1 {
                                 let err = std::io::Error::last_os_error().raw_os_error().unwrap();
                                 println!("failed: {:?}", err);
+                                std::io::stdout().flush().unwrap();
                             }
                             let map_addr = mapaddr as *mut u8;
                             // let map_addr = addr_para as *mut u8;
