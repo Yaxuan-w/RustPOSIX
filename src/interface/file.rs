@@ -217,8 +217,8 @@ impl EmulatedFile {
                     remain_len -= bytes_to_copy;
                     
                     unsafe {
-                        // copy(ptr_mem, ptr, bytes_to_copy);
-                        libc::memcpy(ptr as *mut c_void, ptr_mem as *mut c_void, bytes_to_copy);
+                        copy(ptr_mem, ptr, bytes_to_copy);
+                        // libc::memcpy(ptr as *mut c_void, ptr_mem as *mut c_void, bytes_to_copy);
                         ptr = ptr.add(bytes_to_copy);
                     }
 
