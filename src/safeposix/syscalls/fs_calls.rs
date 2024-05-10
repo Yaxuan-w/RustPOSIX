@@ -1657,6 +1657,11 @@ impl Cage {
                             let _ret = ret;
                             // let mapaddr = unsafe{libc::mmap(addr_para, len, prot, MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED, -1, off)};
                             let mapaddr = interface::libc_mmap(addr, len, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED, -1, off);
+                            
+                            if mapaddr == -1 {
+                                let err = std::io::Error::last_os_error().raw_os_error().unwrap();
+                                println!("failed: {:?}", err);
+                            }
                             let map_addr = mapaddr as *mut u8;
                             // let map_addr = addr_para as *mut u8;
                             let _ = fobj.readat(map_addr, len, off as usize);
