@@ -1650,7 +1650,7 @@ impl Cage {
 
                             let addr_para = addr as *mut c_void;
 
-                            println!("Addr Before Mmap: {:?}", addr_para);
+                            println!("Addr Before Mmap: {:?}", addr);
                             std::io::stdout().flush().unwrap();
                             let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ | PROT_WRITE) };
 
@@ -1660,8 +1660,10 @@ impl Cage {
                             let map_addr = addr_para as *mut u8;
                             let _ = fobj.readat(map_addr, len, off as usize);
                             let retaddr = ((addr_para as i64) & 0xffffffff) as i32;
-                            println!("Addr After Mmap: {:?}", retaddr);
+
+                            println!("Addr After Mmap: {:?}", map_addr);
                             std::io::stdout().flush().unwrap();
+
                             return retaddr;
                         }
 
