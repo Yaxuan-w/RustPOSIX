@@ -1647,11 +1647,11 @@ impl Cage {
                             /* A.W.:
                             *   mmap region without fd and then do read / wrtie to that region
                             */
-                            
-                            println!("Addr Before Mmap: {:?}", addr);
-                            std::io::stdout().flush().unwrap();
+
                             let addr_para = addr as *mut c_void;
 
+                            println!("Addr Before Mmap: {:?}", addr_para);
+                            std::io::stdout().flush().unwrap();
                             let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ | PROT_WRITE) };
 
                             // let mapaddr = unsafe{libc::mmap(addr_para, len, prot, MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED, -1, off)};
