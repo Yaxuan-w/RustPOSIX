@@ -1664,7 +1664,7 @@ impl Cage {
                             }
                             let map_addr = mapaddr as *mut u8;
                             // let map_addr = addr_para as *mut u8;
-                            let _ = fobj.readat(map_addr, len, off as usize);
+                            let _ = fobj.readat(addr, len, off as usize);
                             let retaddr = ((addr_para as i64) & 0xffffffff) as i32;
 
                             println!("Addr used by readat [type: *mut u8]: {:?}", map_addr);
