@@ -1647,6 +1647,7 @@ impl Cage {
                             /* A.W.:
                             *   mmap region without fd and then do read / wrtie to that region
                             */
+                            println!("Addr Before Mmap: {:?}", addr);
                             let addr_para = addr as *mut c_void;
 
                             let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ | PROT_WRITE) };
@@ -1656,6 +1657,7 @@ impl Cage {
                             let map_addr = mapaddr as *mut u8;
                             let _ = fobj.readat(map_addr, len, off as usize);
                             let retaddr = ((addr_para as i64) & 0xffffffff) as i32;
+                            println!("Addr After Mmap: {:?}", retaddr);
                             return retaddr;
                         }
 
