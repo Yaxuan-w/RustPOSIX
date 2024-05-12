@@ -1652,23 +1652,24 @@ impl Cage {
 
                             println!("Addr send to mmap_syscall rustposix and used by mprotect [type: *mut u8]: {:?}", addr);
                             std::io::stdout().flush().unwrap();
-                            // let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ | PROT_WRITE) };
+                            let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ | PROT_WRITE) };
 
                             // let mapaddr = unsafe{libc::mmap(addr_para, len, prot, MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED, -1, off)};
-                            let mapaddr = interface::libc_mmap(addr, len, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, off);
+                            // let mapaddr = interface::libc_mmap(addr, len, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, off);
                             
-                            if mapaddr == -1 {
-                                let err = std::io::Error::last_os_error().raw_os_error().unwrap();
-                                println!("failed: {:?}", err);
-                                std::io::stdout().flush().unwrap();
-                            }
-                            let map_addr = mapaddr as *mut u8;
+                            // if mapaddr == -1 {
+                            //     let err = std::io::Error::last_os_error().raw_os_error().unwrap();
+                            //     println!("failed: {:?}", err);
+                            //     std::io::stdout().flush().unwrap();
+                            // }
+                            // let map_addr = mapaddr as *mut u8;
                             // let map_addr = addr_para as *mut u8;
+
                             let _ = fobj.readat(addr, len, off as usize);
                             let retaddr = ((addr_para as i64) & 0xffffffff) as i32;
 
-                            println!("Addr returned by mmap [type: *mut u8]: {:?}", map_addr);
-                            std::io::stdout().flush().unwrap();
+                            // println!("Addr returned by mmap [type: *mut u8]: {:?}", map_addr);
+                            // std::io::stdout().flush().unwrap();
                             println!("Addr used by readat [type: *mut u8]: {:?}", addr);
                             std::io::stdout().flush().unwrap();
 
