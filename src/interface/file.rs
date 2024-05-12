@@ -22,6 +22,8 @@ pub use std::ffi::c_void;
 use std::convert::TryInto;
 use crate::interface::errnos::{Errno, syscall_error};
 
+/* For verification purpose */
+use sha2::{Sha256, Digest};
 
 pub static OPEN_FILES: RustLazyGlobal<Arc<DashSet<String>>> = RustLazyGlobal::new(|| Arc::new(DashSet::new()));
 
@@ -180,10 +182,10 @@ impl EmulatedFile {
     pub fn readat(&self, ptr: *mut u8, length: usize, offset: usize) -> std::io::Result<usize> {
         let mut ptr = ptr;
         let page_size = 4096;
-        // let _buf = unsafe {
-        //     assert!(!ptr.is_null());
-        //     slice::from_raw_parts_mut(ptr, length)
-        // };
+        let _buf = unsafe {
+            assert!(!ptr.is_null());
+            slice::from_raw_parts_mut(ptr, length)
+        };
 
         // Check for the maxium readable bytes
         let len; 
@@ -202,6 +204,11 @@ impl EmulatedFile {
             (offset / page_size, offset % page_size)
         };
         let mut remain_len = len;
+
+        /* For verification purpose */
+        let mut hasher_mem = Sha256::new();
+        let mut hasher_buf = Sha256::new();
+
         let mut i = 0;
         for &index in self.memory_block.iter().skip(offset_block) {
             let mem_base_addr_lock = &GLOBAL_MEMORY.base_address;
@@ -217,8 +224,14 @@ impl EmulatedFile {
                     remain_len -= bytes_to_copy;
                     
                     unsafe {
+                        /* For verification purpose */
+                        hasher_mem.update(slice::from_raw_parts(ptr_mem, bytes_to_copy));
+
                         copy(ptr_mem, ptr, bytes_to_copy);
-                        // libc::memcpy(ptr as *mut c_void, ptr_mem as *mut c_void, bytes_to_copy);
+
+                        /* For verification purpose */
+                        hasher_buf.update(slice::from_raw_parts(ptr, bytes_to_copy));
+                        
                         ptr = ptr.add(bytes_to_copy);
                     }
 
@@ -231,6 +244,13 @@ impl EmulatedFile {
                 }
             }
             i = i + 1;
+        }
+
+        let hash_mem = hasher_mem.finalize(); 
+        let hash_buf = hasher_buf.finalize(); 
+
+        if hash_mem != hash_buf {
+            panic!("Not pass hash check");
         }
         
         Ok(len - remain_len)
