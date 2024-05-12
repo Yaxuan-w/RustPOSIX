@@ -180,10 +180,10 @@ impl EmulatedFile {
     pub fn readat(&self, ptr: *mut u8, length: usize, offset: usize) -> std::io::Result<usize> {
         let mut ptr = ptr;
         let page_size = 4096;
-        let _buf = unsafe {
-            assert!(!ptr.is_null());
-            slice::from_raw_parts_mut(ptr, length)
-        };
+        // let _buf = unsafe {
+        //     assert!(!ptr.is_null());
+        //     slice::from_raw_parts_mut(ptr, length)
+        // };
 
         // Check for the maxium readable bytes
         let len; 
