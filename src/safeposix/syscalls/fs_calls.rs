@@ -1667,7 +1667,9 @@ impl Cage {
                             let _ = fobj.readat(addr, len, off as usize);
                             let retaddr = ((addr_para as i64) & 0xffffffff) as i32;
 
-                            println!("Addr used by readat [type: *mut u8]: {:?}", map_addr);
+                            println!("Addr returned by mmap [type: *mut u8]: {:?}", map_addr);
+                            std::io::stdout().flush().unwrap();
+                            println!("Addr used by readat [type: *mut u8]: {:?}", addr);
                             std::io::stdout().flush().unwrap();
 
                             return retaddr;
