@@ -1660,33 +1660,36 @@ impl Cage {
                             //this is the system fd number--the number of the lind.<inodenum> file in our host system
                             // let fobjfdno = fobj.as_fd_handle_raw_int();
 
-                            // let filename = &fobj.filename;
+                            let filename = &fobj.filename;
                             
-                            let hello_path = "/home/lind/lind_project/lind/lindenv/fs/hello.nexe";
-                            // let hello = interface::File::open(hello_path).unwrap();
-                            let hello = interface::OpenOptions::new().write(true).read(true).open(hello_path).unwrap();
-                            println!("[DEBUG] Hello: {:?}", hello);
-                            std::io::stdout().flush().unwrap();
-                            let fd_libc = hello.as_raw_fd();
-                            // let fd_libc;
-                            // if filename == "hello.nexe" {
-                            //     let hello_path = "/home/lind/lind_project/lind/lindenv/fs/hello.nexe";
-                            //     // let hello = interface::File::open(hello_path).unwrap();
-                            //     let hello = interface::OpenOptions::new().write(true).read(true).open(hello_path).unwrap();
-                            //     println!("[DEBUG] Hello: {:?}", hello);
-                            //     std::io::stdout().flush().unwrap();
-                            //     fd_libc = hello.as_raw_fd();
-                            // } else if filename == "libgcc_s.so.1" {
-                            //     let libgcc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libgcc_s.so.1";
-                            //     let libgcc = interface::File::open(libgcc_path).unwrap();
-                            //     fd_libc = libgcc.as_raw_fd();
-                            // } else {
-                            //     let libc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libc.so.990e7c45";
-                            //     let libc = interface::File::open(libc_path).unwrap();
-                            //     fd_libc = libc.as_raw_fd();
-                            // }
-
-                            let ret = interface::libc_mmap(addr, len, prot, MAP_FIXED | MAP_PRIVATE, fd_libc, off);
+                            // let hello_path = "/home/lind/lind_project/lind/lindenv/fs/hello.nexe";
+                            // // let hello = interface::File::open(hello_path).unwrap();
+                            // let hello = interface::OpenOptions::new().write(true).read(true).open(hello_path).unwrap();
+                            // println!("[DEBUG] Hello: {:?}", hello);
+                            // std::io::stdout().flush().unwrap();
+                            // let fd_libc = hello.as_raw_fd();
+                            let fd_libc;
+                            let ret;
+                            if filename == "hello.nexe" {
+                                let hello_path = "/home/lind/lind_project/lind/lindenv/fs/hello.nexe";
+                                // let hello = interface::File::open(hello_path).unwrap();
+                                let hello = interface::OpenOptions::new().write(true).read(true).open(hello_path).unwrap();
+                                println!("[DEBUG] Hello: {:?}", hello);
+                                std::io::stdout().flush().unwrap();
+                                fd_libc = hello.as_raw_fd();
+                                ret = interface::libc_mmap(addr, len, prot, MAP_FIXED | MAP_PRIVATE, fd_libc, off);
+                            } else if filename == "libgcc_s.so.1" {
+                                let libgcc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libgcc_s.so.1";
+                                let libgcc = interface::File::open(libgcc_path).unwrap();
+                                fd_libc = libgcc.as_raw_fd();
+                                ret = interface::libc_mmap(addr, len, prot, MAP_FIXED | MAP_PRIVATE, fd_libc, off);
+                            } else {
+                                let libc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libc.so.990e7c45";
+                                let libc = interface::File::open(libc_path).unwrap();
+                                fd_libc = libc.as_raw_fd();
+                                ret = interface::libc_mmap(addr, len, prot, MAP_FIXED | MAP_PRIVATE, fd_libc, off);
+                            }
+                            
                             if ret == -1 {
                                 let err = std::io::Error::last_os_error().raw_os_error().unwrap();
                                 println!("failed: {:?}", err);
