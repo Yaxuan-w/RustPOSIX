@@ -1642,42 +1642,23 @@ impl Cage {
                             let fobj = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
                             //we cannot mmap a rust file in quite the right way so we retrieve the fd number from it
                             //this is the system fd number--the number of the lind.<inodenum> file in our host system
-                            // let fobjfdno = fobj.as_fd_handle_raw_int();
 
-                            /* A.W.:
-                            *   mmap region without fd and then do read / wrtie to that region
-                            */
-
-                            let addr_para = addr as *mut c_void;
-
-                            println!("Addr send to mmap_syscall rustposix and used by mprotect [type: *mut u8]: {:?}", addr);
-                            std::io::stdout().flush().unwrap();
-                            let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ | PROT_WRITE) };
-
+                            let filename = &fobj.filename;
+                            let mut fd_libc = 0;
+                            if filename == "hello.nexe" {
+                                let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/hello.nexe".as_ptr() as *const i8;
+                                unsafe{ fd_libc = libc::open(hello_path, O_RDONLY); }
+                            } else if filename == "libgcc_s.so.1" {
+                                let libgcc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libgcc_s.so.1".as_ptr() as *const i8;
+                                unsafe{ fd_libc == libc::open(libgcc_path, O_RDONLY); }
+                            } else {
+                                let libc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libc.so.990e7c45".as_ptr() as *const i8;
+                                unsafe{ fd_libc == libc::open(libc_path, O_RDONLY); }
+                            }
+                            
                             // let mapaddr = unsafe{libc::mmap(addr_para, len, prot, MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED, -1, off)};
-                            let mapaddr = interface::libc_mmap(addr, len, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, off);
+                            return interface::libc_mmap(addr, len, prot, flags,fd_libc, off);
                             
-                            // if mapaddr == -1 {
-                            //     let err = std::io::Error::last_os_error().raw_os_error().unwrap();
-                            //     println!("failed: {:?}", err);
-                            //     std::io::stdout().flush().unwrap();
-                            // }
-                            // let map_addr = mapaddr as *mut u8;
-                            // let map_addr = addr_para as *mut u8;
-
-                            let _ = fobj.readat(addr, len, off as usize);
-
-                            let retaddr = ((addr_para as i64) & 0xffffffff) as i32;
-
-                            // println!("Addr returned by mmap [type: *mut u8]: {:?}", map_addr);
-                            // std::io::stdout().flush().unwrap();
-                            println!("Addr used by readat [type: *mut u8]: {:?}", addr);
-                            std::io::stdout().flush().unwrap();
-                            
-                            let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ) };
-
-                            // return retaddr;
-                            return mapaddr;
                         }
 
                         Inode::CharDev(_chardev_inode_obj) => {
