@@ -1655,10 +1655,8 @@ impl Cage {
                                 let libc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libc.so.990e7c45".as_ptr() as *const i8;
                                 unsafe{ fd_libc = libc::open(libc_path, O_RDONLY); }
                             }
-                            
-                            // let mapaddr = unsafe{libc::mmap(addr_para, len, prot, MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED, -1, off)};
-                            return interface::libc_mmap(addr, len, prot, flags,fd_libc, off);
-                            
+                            let addr_path = interface::libc_mmap(addr, len, prot, flags,fd_libc, off);
+                            return addr_path;
                         }
 
                         Inode::CharDev(_chardev_inode_obj) => {
