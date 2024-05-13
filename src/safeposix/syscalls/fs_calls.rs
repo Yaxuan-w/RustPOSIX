@@ -1664,7 +1664,8 @@ impl Cage {
                             let fd_libc;
                             if filename == "hello.nexe" {
                                 let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/hello.nexe";
-                                let hello = interface::File::open(hello_path).unwrap();
+                                // let hello = interface::File::open(hello_path).unwrap();
+                                let hello = interface::OpenOptions::new().write(true).read(true).open(hello_path).unwrap();
                                 println!("[DEBUG] Hello: {:?}", hello);
                                 std::io::stdout().flush().unwrap();
                                 fd_libc = hello.as_raw_fd();
