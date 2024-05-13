@@ -1655,7 +1655,7 @@ impl Cage {
                             let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ | PROT_WRITE) };
 
                             // let mapaddr = unsafe{libc::mmap(addr_para, len, prot, MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED, -1, off)};
-                            // let mapaddr = interface::libc_mmap(addr, len, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, off);
+                            let mapaddr = interface::libc_mmap(addr, len, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, off);
                             
                             // if mapaddr == -1 {
                             //     let err = std::io::Error::last_os_error().raw_os_error().unwrap();
@@ -1675,7 +1675,9 @@ impl Cage {
                             std::io::stdout().flush().unwrap();
                             
                             let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ) };
-                            return retaddr;
+
+                            // return retaddr;
+                            return mapaddr;
                         }
 
                         Inode::CharDev(_chardev_inode_obj) => {
