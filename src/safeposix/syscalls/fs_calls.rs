@@ -1678,7 +1678,13 @@ impl Cage {
                                 fd_libc = libc.as_raw_fd();
                             }
 
-                            interface::libc_mmap(addr, len, prot, flags, fd_libc, off)
+                            let ret = interface::libc_mmap(addr, len, prot, flags, fd_libc, off);
+                            if ret == -1 {
+                                let err = std::io::Error::last_os_error().raw_os_error().unwrap();
+                                println!("failed: {:?}", err);
+                                std::io::stdout().flush().unwrap();
+                            }
+                            return ret;
                         }
 
                         Inode::CharDev(_chardev_inode_obj) => {
