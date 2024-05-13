@@ -13,11 +13,11 @@ pub use std::path::{PathBuf as RustPathBuf, Path as RustPath, Component as RustP
 pub use std::ffi::CStr as RustCStr;
 pub use std::io::{SeekFrom, Seek, Read, Write, BufReader, BufWriter, Result};
 pub use std::sync::{LazyLock as RustLazyGlobal, Mutex as RustMutex};
-use std::ptr::copy;
+pub use std::ptr::{copy, null_mut};
 
 use std::os::unix::io::{AsRawFd, RawFd};
 // use libc::{mmap, mremap, munmap, PROT_READ, PROT_WRITE, MAP_SHARED, MREMAP_MAYMOVE, off64_t};
-pub use libc::{mprotect, mmap, memcpy};
+pub use libc::{mprotect, mmap, memcpy, posix_memalign};
 pub use std::ffi::c_void;
 use std::convert::TryInto;
 use crate::interface::errnos::{Errno, syscall_error};
