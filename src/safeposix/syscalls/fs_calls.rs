@@ -1607,11 +1607,25 @@ impl Cage {
     *   [Wait to do]
     *   - Need to implement mmap manage ...? link fd with memory region
     */
-    pub fn mmap_syscall(&self, addr: *mut u8, len: usize, prot: i32, flags: i32, fildes: i32, off: i64) -> i32 {
-        if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
+    pub fn mmap_syscall(
+        &self,
+        addr: *mut u8,
+        len: usize,
+        prot: i32,
+        flags: i32,
+        fildes: i32,
+        off: i64,
+    ) -> i32 {
+        if len == 0 {
+            syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");
+        }
 
         if 0 == flags & (MAP_PRIVATE | MAP_SHARED) {
-            syscall_error(Errno::EINVAL, "mmap", "The value of flags is invalid (neither MAP_PRIVATE nor MAP_SHARED is set)");
+            syscall_error(
+                Errno::EINVAL,
+                "mmap",
+                "The value of flags is invalid (neither MAP_PRIVATE nor MAP_SHARED is set)",
+            );
         }
 
         if 0 != flags & MAP_ANONYMOUS {
@@ -1621,11 +1635,13 @@ impl Cage {
         let checkedfd = self.get_filedescriptor(fildes).unwrap();
         let mut unlocked_fd = checkedfd.write();
         if let Some(filedesc_enum) = &mut *unlocked_fd {
-
             //confirm fd type is mappable
             match filedesc_enum {
                 File(ref mut normalfile_filedesc_obj) => {
-                    let inodeobj = FS_METADATA.inodetable.get(&normalfile_filedesc_obj.inode).unwrap();
+                    let inodeobj = FS_METADATA
+                        .inodetable
+                        .get(&normalfile_filedesc_obj.inode)
+                        .unwrap();
 
                     //confirm inode type is mappable
                     match &*inodeobj {
@@ -1642,12 +1658,15 @@ impl Cage {
                             let fobj = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
                             //we cannot mmap a rust file in quite the right way so we retrieve the fd number from it
                             //this is the system fd number--the number of the lind.<inodenum> file in our host system
+                            // let fobjfdno = fobj.as_fd_handle_raw_int();
 
                             let filename = &fobj.filename;
                             let fd_libc;
                             if filename == "hello.nexe" {
                                 let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/hello.nexe";
                                 let hello = interface::File::open(hello_path).unwrap();
+                                println!("[DEBUG] Hello: {:?}", hello);
+                                std::io::stdout().flush().unwrap();
                                 fd_libc = hello.as_raw_fd();
                             } else if filename == "libgcc_s.so.1" {
                                 let libgcc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libgcc_s.so.1";
@@ -1658,8 +1677,8 @@ impl Cage {
                                 let libc = interface::File::open(libc_path).unwrap();
                                 fd_libc = libc.as_raw_fd();
                             }
-                            let addr_path = interface::libc_mmap(addr, len, prot, flags,fd_libc as i32, off);
-                            return addr_path;
+
+                            interface::libc_mmap(addr, len, prot, flags, fd_libc, off)
                         }
 
                         Inode::CharDev(_chardev_inode_obj) => {
@@ -1669,12 +1688,17 @@ impl Cage {
                         _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
                     }
                 }
-                _ => {syscall_error(Errno::EACCES, "mmap", "the fildes argument refers to a file whose type is not supported by mmap")}
+                _ => syscall_error(
+                    Errno::EACCES,
+                    "mmap",
+                    "the fildes argument refers to a file whose type is not supported by mmap",
+                ),
             }
         } else {
             syscall_error(Errno::EBADF, "mmap", "invalid file descriptor")
         }
     }
+    
 
     //------------------------------------MUNMAP SYSCALL------------------------------------
     
