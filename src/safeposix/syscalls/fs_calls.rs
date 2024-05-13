@@ -1644,16 +1644,16 @@ impl Cage {
                             //this is the system fd number--the number of the lind.<inodenum> file in our host system
 
                             let filename = &fobj.filename;
-                            let mut fd_libc = 0;
+                            let fd_libc;
                             if filename == "hello.nexe" {
                                 let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/hello.nexe".as_ptr() as *const i8;
                                 unsafe{ fd_libc = libc::open(hello_path, O_RDONLY); }
                             } else if filename == "libgcc_s.so.1" {
                                 let libgcc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libgcc_s.so.1".as_ptr() as *const i8;
-                                unsafe{ fd_libc == libc::open(libgcc_path, O_RDONLY); }
+                                unsafe{ fd_libc = libc::open(libgcc_path, O_RDONLY); }
                             } else {
                                 let libc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libc.so.990e7c45".as_ptr() as *const i8;
-                                unsafe{ fd_libc == libc::open(libc_path, O_RDONLY); }
+                                unsafe{ fd_libc = libc::open(libc_path, O_RDONLY); }
                             }
                             
                             // let mapaddr = unsafe{libc::mmap(addr_para, len, prot, MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED, -1, off)};
