@@ -1,1 +1,1 @@
-m.txt 1 /m.txt;k.txt 2 /k.txt;hello.nexe 1920332 /hello.nexe
+m.txt 1 /m.txt;k.txt 2 /k.txt;hello.nexe 1920332 /hello.nexe;libc.so.990e7c45 164228679 /lib/glibc/libc.so.990e7c45;libgcc_s.so.1 728119 /lib/glibc/libgcc_s.so.1
