@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::net::AddrParseError;
+use std::os::fd::AsRawFd;
 use std::string;
 
 // File system related system calls
@@ -1646,16 +1646,19 @@ impl Cage {
                             let filename = &fobj.filename;
                             let fd_libc;
                             if filename == "hello.nexe" {
-                                let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/hello.nexe".as_ptr() as *const i8;
-                                unsafe{ fd_libc = libc::open(hello_path, O_RDONLY); }
+                                let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/hello.nexe";
+                                let hello = interface::File::open(hello_path).unwrap();
+                                fd_libc = hello.as_raw_fd();
                             } else if filename == "libgcc_s.so.1" {
-                                let libgcc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libgcc_s.so.1".as_ptr() as *const i8;
-                                unsafe{ fd_libc = libc::open(libgcc_path, O_RDONLY); }
+                                let libgcc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libgcc_s.so.1";
+                                let libgcc = interface::File::open(libgcc_path).unwrap();
+                                fd_libc = libgcc.as_raw_fd();
                             } else {
-                                let libc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libc.so.990e7c45".as_ptr() as *const i8;
-                                unsafe{ fd_libc = libc::open(libc_path, O_RDONLY); }
+                                let libc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libc.so.990e7c45";
+                                let libc = interface::File::open(libc_path).unwrap();
+                                fd_libc = libc.as_raw_fd();
                             }
-                            let addr_path = interface::libc_mmap(addr, len, prot, flags,fd_libc, off);
+                            let addr_path = interface::libc_mmap(addr, len, prot, flags,fd_libc as i32, off);
                             return addr_path;
                         }
 
