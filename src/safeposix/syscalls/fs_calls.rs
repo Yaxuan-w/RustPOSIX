@@ -1663,7 +1663,7 @@ impl Cage {
                             let filename = &fobj.filename;
                             let fd_libc;
                             if filename == "hello.nexe" {
-                                let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/hello.nexe";
+                                let hello_path = "/home/lind/lind_project/lind/lindenv/fs/hello.nexe";
                                 // let hello = interface::File::open(hello_path).unwrap();
                                 let hello = interface::OpenOptions::new().write(true).read(true).open(hello_path).unwrap();
                                 println!("[DEBUG] Hello: {:?}", hello);
