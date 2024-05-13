@@ -1673,7 +1673,8 @@ impl Cage {
                             // std::io::stdout().flush().unwrap();
                             println!("Addr used by readat [type: *mut u8]: {:?}", addr);
                             std::io::stdout().flush().unwrap();
-
+                            
+                            let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ) };
                             return retaddr;
                         }
 
