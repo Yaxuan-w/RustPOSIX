@@ -1677,7 +1677,7 @@ impl Cage {
                                 println!("[DEBUG] Hello: {:?}", hello);
                                 std::io::stdout().flush().unwrap();
                                 fd_libc = hello.as_raw_fd();
-                                ret = interface::libc_mmap(addr, len, prot, MAP_FIXED | MAP_PRIVATE, fd_libc, off);
+                                ret = interface::libc_mmap(addr, len, prot, flags, fd_libc, off);
                             } else if filename == "libgcc_s.so.1" {
                                 let libgcc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libgcc_s.so.1";
                                 let libgcc = interface::File::open(libgcc_path).unwrap();
