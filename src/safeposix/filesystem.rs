@@ -12,6 +12,7 @@ use super::cage::{Cage, FileDesc, FileDescriptor};
 
 use std::io::BufRead;
 use std::io::Read;
+use std::io::*;
 
 pub const METADATAFILENAME: &str = "lind.metadata";
 
@@ -342,6 +343,9 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
         let _ = emulated_file.writefile_from_bytes(&filedata).unwrap();
         
+        println!("[DEBUG] \nname: {:?} \nfile size: {:?} \nmemory block{:?}", emulated_file.filename, emulated_file.filesize, emulated_file.memory_block);
+        std::io::stdout().flush().unwrap();
+
         let (fd, guardopt) = cage.get_next_fd(None);
         if fd < 0 { panic!("Cannot get fd table in loading phase"); }
         let fdoption = &mut *guardopt.unwrap();

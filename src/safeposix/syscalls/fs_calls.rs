@@ -141,7 +141,7 @@ impl Cage {
                 let _insertval = fdoption.insert(File(self._file_initializer(inodenum, flags, size)));
             }
         }
-
+        
         fd //open returns the opened file descriptor
     }
 
@@ -628,6 +628,14 @@ impl Cage {
                                 let libgcc = interface::File::open(libgcc_path).unwrap();
                                 let fd_libc = libgcc.as_raw_fd();
                                 let bytesread = unsafe{ interface::LibcRead(fd_libc, buf as *mut c_void, count) };
+                                return bytesread as i32;
+                            }
+
+                            if fileobject.filename == "hello.nexe" && count == 832 {
+                                let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/hello.nexe";
+                                let hello = interface::File::open(hello_path).unwrap();
+                                let fd_hello = hello.as_raw_fd();
+                                let bytesread = unsafe{ interface::LibcRead(fd_hello, buf as *mut c_void, count) };
                                 return bytesread as i32;
                             }
 
