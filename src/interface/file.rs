@@ -81,7 +81,8 @@ pub struct Memory {
 
 // We want to Memory to be a global variable 
 pub static GLOBAL_MEMORY: RustLazyGlobal<Memory> = RustLazyGlobal::new(|| {
-    let page_size = 4096;
+    // let page_size = 4096;
+    let page_size = 64*1024;
     // For test purpose
     let size = 4 * 1024 * 1024 * 1024;
     
@@ -100,7 +101,8 @@ pub static GLOBAL_MEMORY: RustLazyGlobal<Memory> = RustLazyGlobal::new(|| {
 pub fn allocate(request_size: usize) -> Vec<usize> {
     let memory_list_mutex = &GLOBAL_MEMORY.memory_list;
     let mut memorylist = memory_list_mutex.lock().unwrap();
-    let page_size: usize = 4096; 
+    // let page_size: usize = 4096; 
+    let page_size = 64*1024;
     // Compute number of pages we need
     let num_pages_needed = if request_size % page_size == 0 {
         request_size / page_size
@@ -179,7 +181,8 @@ impl EmulatedFile {
 
     pub fn readat(&self, ptr: *mut u8, length: usize, offset: usize) -> std::io::Result<usize> {
         let mut ptr = ptr;
-        let page_size = 4096;
+        // let page_size = 4096;
+        let page_size = 64*1024;
         let _buf = unsafe {
             assert!(!ptr.is_null());
             slice::from_raw_parts_mut(ptr, length)
@@ -258,7 +261,8 @@ impl EmulatedFile {
     // Write to file from provided C-buffer
     pub fn writeat(&mut self, ptr: *const u8, length: usize, offset: usize) -> std::io::Result<usize> {
         let mut ptr = ptr;
-        let page_size = 4096;
+        // let page_size = 4096;
+        let page_size = 64*1024;
         let _buf = unsafe {
             assert!(!ptr.is_null());
             slice::from_raw_parts(ptr, length)
@@ -325,7 +329,8 @@ impl EmulatedFile {
     }
 
     pub fn shrink(&mut self, length: usize) -> std::io::Result<()> {
-        let page_size = 4096;
+        // let page_size = 4096;
+        let page_size = 64*1024;
         if length > self.filesize { 
             panic!("Something is wrong. File is already smaller than length.");
         }
