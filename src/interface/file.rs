@@ -17,7 +17,7 @@ pub use std::ptr::{copy, null_mut};
 
 use std::os::unix::io::{AsRawFd, RawFd};
 // use libc::{mmap, mremap, munmap, PROT_READ, PROT_WRITE, MAP_SHARED, MREMAP_MAYMOVE, off64_t};
-pub use libc::{mprotect, mmap, memcpy, posix_memalign};
+pub use libc::{mprotect, mmap, memcpy, posix_memalign, read as LibcRead};
 pub use std::ffi::c_void;
 use std::convert::TryInto;
 use crate::interface::errnos::{Errno, syscall_error};
