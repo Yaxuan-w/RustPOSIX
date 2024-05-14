@@ -632,7 +632,7 @@ impl Cage {
                             }
 
                             if fileobject.filename == "hello.nexe" && count == 832 {
-                                let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/hello.nexe";
+                                let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/hello.nexe";
                                 let hello = interface::File::open(hello_path).unwrap();
                                 let fd_hello = hello.as_raw_fd();
                                 let bytesread = unsafe{ interface::LibcRead(fd_hello, buf as *mut c_void, count) };
