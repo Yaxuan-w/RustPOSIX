@@ -622,30 +622,8 @@ impl Cage {
                             let position = normalfile_filedesc_obj.position;
                             let fileobject = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
 
-                            /* For test purpose */
-                            // if fileobject.filename == "libgcc_s.so.1" && count == 832 {
-                            //     let libgcc_path = "/home/lind/lind_project/src/safeposix-rust/loading/lib/glibc/libgcc_s.so.1";
-                            //     let libgcc = interface::File::open(libgcc_path).unwrap();
-                            //     let fd_libc = libgcc.as_raw_fd();
-                            //     let bytesread = unsafe{ interface::LibcRead(fd_libc, buf as *mut c_void, count) };
-                            //     return bytesread as i32;
-                            // }
-
-                            // if fileobject.filename == "hello.nexe" && count == 832 {
-                            //     let hello_path = "/home/lind/lind_project/src/safeposix-rust/loading/hello.nexe";
-                            //     let hello = interface::File::open(hello_path).unwrap();
-                            //     let fd_hello = hello.as_raw_fd();
-                            //     let bytesread = unsafe{ interface::LibcRead(fd_hello, buf as *mut c_void, count) };
-                            //     return bytesread as i32;
-                            // }
-
                             if let Ok(bytesread) = fileobject.readat(buf, count, position) {
                                 //move position forward by the number of bytes we've read
-
-                                // let mut test = vec![0;2];   
-                                // test.clone().into_boxed_slice();
-                                // emulated_file.readat(test.as_mut_ptr(), 2, 0);
-                                // panic!("Something wrong {:?}", std::str::from_utf8(buf).unwrap());
 
                                 normalfile_filedesc_obj.position += bytesread;
                                 bytesread as i32
@@ -1677,8 +1655,6 @@ impl Cage {
                             //this is the system fd number--the number of the lind.<inodenum> file in our host system
                             // let fobjfdno = fobj.as_fd_handle_raw_int();
 
-                            // let filename = &fobj.filename;
-                            
                             /* A.W.:
                             *   mmap region without fd and then do read / wrtie to that region
                             */
@@ -1692,8 +1668,6 @@ impl Cage {
                             let _ = fobj.readat(addr, len, off as usize);
                             let retaddr = ((addr_para as i64) & 0xffffffff) as i32;
 
-                            // println!("Addr returned by mmap [type: *mut u8]: {:?}", map_addr);
-                            // std::io::stdout().flush().unwrap();
                             println!("Addr used by readat [type: *mut u8]: {:?}", addr);
                             std::io::stdout().flush().unwrap();
                             
@@ -1725,21 +1699,21 @@ impl Cage {
     *   [Need to develop] 
     *   Use mmap manage ...? to set flag and maintain the mem region
     */
-    // pub fn munmap_syscall(&self, addr: *mut u8, len: usize) -> i32 {
-    //     if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
-    //     //NaCl's munmap implementation actually just writes over the previously mapped data with PROT_NONE
-    //     //This frees all of the resources except page table space, and is put inside safeposix for consistency
-    //     // interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
-    //     unsafe {
-    //         mprotect(addr as *mut c_void, len, PROT_NONE)
-    //     };
-    //     return ((addr as i64) & 0xffffffff) as i32;
-    // }
-
     pub fn munmap_syscall(&self, addr: *mut u8, len: usize) -> i32 {
         if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
-        interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
+        //NaCl's munmap implementation actually just writes over the previously mapped data with PROT_NONE
+        //This frees all of the resources except page table space, and is put inside safeposix for consistency
+        // interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
+        unsafe {
+            mprotect(addr as *mut c_void, len, PROT_NONE)
+        };
+        return ((addr as i64) & 0xffffffff) as i32;
     }
+
+    // pub fn munmap_syscall(&self, addr: *mut u8, len: usize) -> i32 {
+    //     if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
+    //     interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
+    // }
     //------------------------------------FLOCK SYSCALL------------------------------------
 
     pub fn flock_syscall(&self, fd: i32, operation: i32) -> i32 {
