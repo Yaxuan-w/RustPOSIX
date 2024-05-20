@@ -8,20 +8,22 @@ use std::sync::Arc;
 use dashmap::DashSet;
 pub use std::fs::{self, File, OpenOptions, canonicalize};
 use std::env;
-use std::slice;
+pub use std::slice;
 pub use std::path::{PathBuf as RustPathBuf, Path as RustPath, Component as RustPathComponent};
 pub use std::ffi::CStr as RustCStr;
 pub use std::io::{SeekFrom, Seek, Read, Write, BufReader, BufWriter, Result};
 pub use std::sync::{LazyLock as RustLazyGlobal, Mutex as RustMutex};
-use std::ptr::copy;
-use base64::decode;
+pub use std::ptr::{copy, null_mut};
 
 use std::os::unix::io::{AsRawFd, RawFd};
 // use libc::{mmap, mremap, munmap, PROT_READ, PROT_WRITE, MAP_SHARED, MREMAP_MAYMOVE, off64_t};
-use std::ffi::c_void;
+pub use libc::{mprotect, mmap, memcpy, posix_memalign, read as LibcRead};
+pub use std::ffi::c_void;
 use std::convert::TryInto;
 use crate::interface::errnos::{Errno, syscall_error};
 
+/* For verification purpose */
+use sha2::{Sha256, Digest};
 
 pub static OPEN_FILES: RustLazyGlobal<Arc<DashSet<String>>> = RustLazyGlobal::new(|| Arc::new(DashSet::new()));
 
@@ -55,19 +57,19 @@ fn assert_is_allowed_filename(filename: &String) {
         panic!("ArgumentError: Filename exceeds maximum length.")
     }
 
-    if !filename.chars().all(is_allowed_char) {
-        println!("'{}'", filename);
-        panic!("ArgumentError: Filename has disallowed characters.")
-    }
+    // if !filename.chars().all(is_allowed_char) {
+    //     println!("'{}'", filename);
+    //     panic!("ArgumentError: Filename has disallowed characters.")
+    // }
 
-    match filename.as_str() {
-        "" | "." | ".." => panic!("ArgumentError: Illegal filename."),
-        _ => {}
-    }
+    // match filename.as_str() {
+    //     "" | "." | ".." => panic!("ArgumentError: Illegal filename."),
+    //     _ => {}
+    // }
 
-    if filename.starts_with(".") {
-        panic!("ArgumentError: Filename cannot start with a period.")
-    }
+    // if filename.starts_with(".") {
+    //     panic!("ArgumentError: Filename cannot start with a period.")
+    // }
 }
 
 
@@ -79,7 +81,8 @@ pub struct Memory {
 
 // We want to Memory to be a global variable 
 pub static GLOBAL_MEMORY: RustLazyGlobal<Memory> = RustLazyGlobal::new(|| {
-    let page_size = 4096;
+    // let page_size = 4096;
+    let page_size = 64*1024;
     // For test purpose
     let size = 4 * 1024 * 1024 * 1024;
     
@@ -98,7 +101,8 @@ pub static GLOBAL_MEMORY: RustLazyGlobal<Memory> = RustLazyGlobal::new(|| {
 pub fn allocate(request_size: usize) -> Vec<usize> {
     let memory_list_mutex = &GLOBAL_MEMORY.memory_list;
     let mut memorylist = memory_list_mutex.lock().unwrap();
-    let page_size: usize = 4096; 
+    // let page_size: usize = 4096; 
+    let page_size = 64*1024;
     // Compute number of pages we need
     let num_pages_needed = if request_size % page_size == 0 {
         request_size / page_size
@@ -177,7 +181,8 @@ impl EmulatedFile {
 
     pub fn readat(&self, ptr: *mut u8, length: usize, offset: usize) -> std::io::Result<usize> {
         let mut ptr = ptr;
-        let page_size = 4096;
+        // let page_size = 4096;
+        let page_size = 64*1024;
         let _buf = unsafe {
             assert!(!ptr.is_null());
             slice::from_raw_parts_mut(ptr, length)
@@ -200,6 +205,11 @@ impl EmulatedFile {
             (offset / page_size, offset % page_size)
         };
         let mut remain_len = len;
+
+        /* For verification purpose */
+        let mut hasher_mem = Sha256::new();
+        let mut hasher_buf = Sha256::new();
+
         let mut i = 0;
         for &index in self.memory_block.iter().skip(offset_block) {
             let mem_base_addr_lock = &GLOBAL_MEMORY.base_address;
@@ -215,7 +225,14 @@ impl EmulatedFile {
                     remain_len -= bytes_to_copy;
                     
                     unsafe {
+                        /* For verification purpose */
+                        hasher_mem.update(slice::from_raw_parts(ptr_mem, bytes_to_copy));
+
                         copy(ptr_mem, ptr, bytes_to_copy);
+
+                        /* For verification purpose */
+                        hasher_buf.update(slice::from_raw_parts(ptr, bytes_to_copy));
+                        
                         ptr = ptr.add(bytes_to_copy);
                     }
 
@@ -229,6 +246,13 @@ impl EmulatedFile {
             }
             i = i + 1;
         }
+
+        let hash_mem = hasher_mem.finalize(); 
+        let hash_buf = hasher_buf.finalize(); 
+
+        if hash_mem != hash_buf {
+            panic!("Not pass hash check");
+        }
         
         Ok(len - remain_len)
 
@@ -237,7 +261,8 @@ impl EmulatedFile {
     // Write to file from provided C-buffer
     pub fn writeat(&mut self, ptr: *const u8, length: usize, offset: usize) -> std::io::Result<usize> {
         let mut ptr = ptr;
-        let page_size = 4096;
+        // let page_size = 4096;
+        let page_size = 64*1024;
         let _buf = unsafe {
             assert!(!ptr.is_null());
             slice::from_raw_parts(ptr, length)
@@ -304,7 +329,8 @@ impl EmulatedFile {
     }
 
     pub fn shrink(&mut self, length: usize) -> std::io::Result<()> {
-        let page_size = 4096;
+        // let page_size = 4096;
+        let page_size = 64*1024;
         if length > self.filesize { 
             panic!("Something is wrong. File is already smaller than length.");
         }

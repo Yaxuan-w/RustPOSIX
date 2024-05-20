@@ -118,6 +118,7 @@ use super::filesystem::{FS_METADATA, load_fs, incref_root, remove_domain_sock, L
 use super::shm::{SHM_METADATA};
 use super::net::{NET_METADATA};
 use crate::interface::errnos::*;
+
 use super::syscalls::{sys_constants::*, fs_constants::IPC_STAT};
 use crate::lib_fs_utils::{visit_children, lind_deltree};
 
@@ -234,9 +235,9 @@ pub extern "C" fn dispatcher(cageid: u64, callnum: i32, arg1: Arg, arg2: Arg, ar
         FSTATFS_SYSCALL => {
             check_and_dispatch!(cage.fstatfs_syscall, interface::get_int(arg1), interface::get_fsdatastruct(arg2))
         }
-        // MMAP_SYSCALL => {
-        //     check_and_dispatch!(cage.mmap_syscall, interface::get_mutcbuf(arg1), interface::get_usize(arg2), interface::get_int(arg3), interface::get_int(arg4), interface::get_int(arg5), interface::get_long(arg6))
-        // }
+        MMAP_SYSCALL => {
+            check_and_dispatch!(cage.mmap_syscall, interface::get_mutcbuf(arg1), interface::get_usize(arg2), interface::get_int(arg3), interface::get_int(arg4), interface::get_int(arg5), interface::get_long(arg6))
+        }
         MUNMAP_SYSCALL => {
             check_and_dispatch!(cage.munmap_syscall, interface::get_mutcbuf(arg1), interface::get_usize(arg2))
         }
@@ -637,6 +638,14 @@ pub extern "C" fn lindgetsighandler(cageid: u64, signo: i32) -> u32 {
     }
 }
 
+fn allocate_aligned_memory(size: usize, alignment: usize) -> *mut u8 {
+    let mut buf = interface::null_mut();
+    unsafe {
+        interface::posix_memalign(&mut buf, alignment, size);
+    }
+    buf as *mut u8
+}
+
 #[no_mangle]
 pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
     let _ = interface::VERBOSE.set(verbosity); //assigned to suppress unused result warning
@@ -700,18 +709,14 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
         *   Add initialization steps
         */
         let load_path = "/home/lind/lind_project/src/safeposix-rust/test.txt";
-        let relative_path = "/home/lind/lind_project/src/safeposix-rust";
+        let relative_path = "/home/lind/lind_project/src/safeposix-rust/loading";
         // let load_path = "/home/RustPOSIX/test.txt";
         // let relative_path = "/home/RustPOSIX";
 
         const MB: usize = 4 * 1024 * 1024 * 1024;
-        
-        let mut vec = Vec::with_capacity(MB);
-        unsafe {
-            vec.set_len(MB);
-        }
-        let ptr:*mut u8 = vec.as_mut_ptr();
-        std::mem::forget(vec);
+
+        let ptr = allocate_aligned_memory(MB, 4096); 
+        // let _ = std::mem::forget(ptr);
         
         let start_address = ptr as usize;
         if let Ok(mut addr) = interface::GLOBAL_MEMORY.base_address.lock() {

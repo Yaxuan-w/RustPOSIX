@@ -12,6 +12,7 @@ use super::cage::{Cage, FileDesc, FileDescriptor};
 
 use std::io::BufRead;
 use std::io::Read;
+use std::io::*;
 
 pub const METADATAFILENAME: &str = "lind.metadata";
 
@@ -229,11 +230,59 @@ pub fn format_fs() {
 *       2) a dir path that contains the actual file needs to be read, parameters: actual path = content_path + relative path 
 *           (from input_path)
 */
+fn create_missing_directory(path: &str, cageid: u64) -> std::io::Result<()> {
+    // Recursively create parent directory if missing
+    let mode = 0o777; // or any other default mode
+    if path.len() == 0 { panic!("given path was null in loading phase"); }
+    let cage = interface::cagetable_getref(cageid);
+    let truepath = normpath(convpath(path), &cage);
+
+    //pass the metadata to this helper. If passed table is none, then create new instance
+    let metadata = &FS_METADATA;
+
+    match metawalkandparent(truepath.as_path()) {
+        //If neither the file nor parent exists
+        (None, None) => {
+            panic!("a directory component in pathname does not exist or is a dangling symbolic link in loading phase{:?}", truepath.as_path())
+        }
+
+        //If the file doesn't exist but the parent does
+        (None, Some(pardirinode)) => {
+            let filename = truepath.file_name().unwrap().to_str().unwrap().to_string(); //for now we assume this is sane, but maybe this should be checked later
+
+            let effective_mode = S_IFDIR as u32 | mode;
+
+            //assert sane mode bits
+            if mode & (S_IRWXA | S_FILETYPEFLAGS as u32) != mode {
+                panic!("Mode bits were not sane in loading phase");
+            }
+
+            let newinodenum = FS_METADATA.nextinode.fetch_add(1, interface::RustAtomicOrdering::Relaxed); //fetch_add returns the previous value, which is the inode number we want
+            let time = interface::timestamp(); //We do a real timestamp now
+
+            let newinode = Inode::Dir(DirectoryInode {
+                size: 0, uid: DEFAULT_UID, gid: DEFAULT_GID,
+                mode: effective_mode, linkcount: 3, refcount: 0, //2 because ., and .., as well as reference in parent directory
+                atime: time, ctime: time, mtime: time, 
+                filename_to_inode_dict: init_filename_to_inode_dict(newinodenum, pardirinode)
+            });
+
+            if let Inode::Dir(ref mut parentdir) = *(metadata.inodetable.get_mut(&pardirinode).unwrap()) {
+                parentdir.filename_to_inode_dict.insert(filename, newinodenum);
+                parentdir.linkcount += 1;
+            } //insert a reference to the file in the parent directory
+            else {unreachable!();}
+            metadata.inodetable.insert(newinodenum, newinode);
+            return Ok(()); 
+        }
+
+        (Some(_), ..) => {
+            panic!("pathname already exists, cannot create directory {:?}",truepath.as_path());
+        }
+    }
+}
+
 pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Result<()> {
-    /* A.W.:
-    *   Loading File is consisted by two parts: (filename filesize filepath;filename2 filesize2 filepath2;...)
-    *   "not whitespace between size and next filename" followed by contents
-    */
     // Open the loading file
     let file = interface::File::open(input_path)?;
     let mut reader = interface::BufReader::new(file);
@@ -261,6 +310,31 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
     // Read contents into EmulatedFile according to file information entry
     for (filename, filesize, filepath) in file_entries {
         let abs_content_path = format!("{}{}", content_path, filepath);
+
+        // Adding dir
+        let cage = interface::cagetable_getref(cageid);
+        let truepath = normpath(convpath(filepath), &cage);
+        if filepath.len() == 0 { panic!("No path in loading phase"); }
+
+        let mut ancestor = interface::RustPathBuf::from("/");
+        for component in truepath.parent().unwrap().components() {
+            ancestor.push(component);
+
+            //Walk the file tree to get inode from path
+            if let Some(inodenum) = metawalk(&ancestor) {
+                let inodeobj = FS_METADATA.inodetable.get(&inodenum).unwrap();
+                match &*inodeobj {
+                    Inode::Dir(_f) => {
+                        continue;
+                    },
+                    _ => {
+                        break;
+                    }
+                }
+            }
+            let _ = create_missing_directory(ancestor.to_str().unwrap(), cageid);
+        }
+
         let mut contentfile = interface::File::open(abs_content_path)?;
         let mut filedata = Vec::new();
         let _ = contentfile.read_to_end(&mut filedata)?;
@@ -269,17 +343,16 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
         let _ = emulated_file.writefile_from_bytes(&filedata).unwrap();
         
-        // Add to metadata
-        let cage = interface::cagetable_getref(cageid);
-        let truepath = normpath(convpath(filepath), &cage);
-        if filepath.len() == 0 { panic!("No path in loading phase"); }
+        // println!("[DEBUG] \nname: {:?} \nfile size: {:?} \nmemory block{:?}", emulated_file.filename, emulated_file.filesize, emulated_file.memory_block);
+        // std::io::stdout().flush().unwrap();
+
         let (fd, guardopt) = cage.get_next_fd(None);
         if fd < 0 { panic!("Cannot get fd table in loading phase"); }
         let fdoption = &mut *guardopt.unwrap();
         let flags = O_RDWR | O_CREAT | O_APPEND;
         match metawalkandparent(truepath.as_path()) {
             (None, None) => {
-                panic!("Cannot create files in loading phase");
+                panic!("Cannot create files in loading phase: {:?}", truepath.as_path());
             }
             (None, Some(pardirinode)) => {
                 let mode = 0o777;
