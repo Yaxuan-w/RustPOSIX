@@ -347,6 +347,9 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         // std::io::stdout().flush().unwrap();
 
         let (fd, guardopt) = cage.get_next_fd(None);
+        println!("[DEBUG] \nname: {:?} \nfile size: {:?} \nmemory block{:?}", emulated_file.filename, emulated_file.filesize, emulated_file.memory_block);
+        println!("\nfd: {:?}", fd);
+        std::io::stdout().flush().unwrap();
         if fd < 0 { panic!("Cannot get fd table in loading phase"); }
         let fdoption = &mut *guardopt.unwrap();
         let flags = O_RDWR | O_CREAT | O_APPEND;
