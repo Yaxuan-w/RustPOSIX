@@ -1651,9 +1651,6 @@ impl Cage {
                             }
                             //because of NaCl's internal workings we must allow mappings to extend past the end of a file
                             let fobj = FILEOBJECTTABLE.get(&normalfile_filedesc_obj.inode).unwrap();
-                            //we cannot mmap a rust file in quite the right way so we retrieve the fd number from it
-                            //this is the system fd number--the number of the lind.<inodenum> file in our host system
-                            // let fobjfdno = fobj.as_fd_handle_raw_int();
 
                             /* A.W.:
                             *   mmap region without fd and then do read / wrtie to that region
@@ -1661,15 +1658,15 @@ impl Cage {
 
                             let addr_para = addr as *mut c_void;
 
-                            println!("Addr send to mmap_syscall rustposix and used by mprotect [type: *mut u8]: {:?}", addr);
-                            std::io::stdout().flush().unwrap();
+                            // println!("Addr send to mmap_syscall rustposix and used by mprotect [type: *mut u8]: {:?}", addr);
+                            // std::io::stdout().flush().unwrap();
                             let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ | PROT_WRITE) };
 
                             let _ = fobj.readat(addr, len, off as usize);
                             let retaddr = ((addr_para as i64) & 0xffffffff) as i32;
 
-                            println!("Addr used by readat [type: *mut u8]: {:?}", addr);
-                            std::io::stdout().flush().unwrap();
+                            // println!("Addr used by readat [type: *mut u8]: {:?}", addr);
+                            // std::io::stdout().flush().unwrap();
                             
                             return  retaddr;
                         }
@@ -1703,17 +1700,12 @@ impl Cage {
         if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
         //NaCl's munmap implementation actually just writes over the previously mapped data with PROT_NONE
         //This frees all of the resources except page table space, and is put inside safeposix for consistency
-        // interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
         unsafe {
             mprotect(addr as *mut c_void, len, PROT_NONE)
         };
         return ((addr as i64) & 0xffffffff) as i32;
     }
 
-    // pub fn munmap_syscall(&self, addr: *mut u8, len: usize) -> i32 {
-    //     if len == 0 {syscall_error(Errno::EINVAL, "mmap", "the value of len is 0");}
-    //     interface::libc_mmap(addr, len, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0)
-    // }
     //------------------------------------FLOCK SYSCALL------------------------------------
 
     pub fn flock_syscall(&self, fd: i32, operation: i32) -> i32 {
