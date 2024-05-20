@@ -1658,15 +1658,11 @@ impl Cage {
 
                             let addr_para = addr as *mut c_void;
 
-                            // println!("Addr send to mmap_syscall rustposix and used by mprotect [type: *mut u8]: {:?}", addr);
-                            // std::io::stdout().flush().unwrap();
                             let _ret = unsafe { libc::mprotect(addr_para, len, PROT_READ | PROT_WRITE) };
 
                             let _ = fobj.readat(addr, len, off as usize);
                             let retaddr = ((addr_para as i64) & 0xffffffff) as i32;
 
-                            // println!("Addr used by readat [type: *mut u8]: {:?}", addr);
-                            // std::io::stdout().flush().unwrap();
                             
                             return  retaddr;
                         }
