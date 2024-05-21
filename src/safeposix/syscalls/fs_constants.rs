@@ -9,7 +9,7 @@ use crate::interface;
 pub const DT_UNKNOWN: u8 = 0;
 
 pub const STARTINGFD: i32 = 0;
-pub const MAXFD: i32 = 1024;
+pub const MAXFD: i32 = 102400;
 pub const STARTINGPIPE: i32 = 0;
 pub const MAXPIPE: i32 = 1024;
 
