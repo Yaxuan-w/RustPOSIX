@@ -122,6 +122,8 @@ use crate::interface::errnos::*;
 use super::syscalls::{sys_constants::*, fs_constants::IPC_STAT};
 use crate::lib_fs_utils::{visit_children, lind_deltree};
 
+use std::io::*;
+
 macro_rules! get_onearg {
     ($arg: expr) => {
         match (move || Ok($arg?))() {
@@ -708,6 +710,9 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
         /* A.W.:
         *   Add initialization steps
         */
+        println!("Entered loading phase");
+        std::io::stdout().flush().unwrap();
+
         let load_path = "/home/lind/lind_project/src/safeposix-rust/test.txt";
         let relative_path = "/home/lind/lind_project/src/safeposix-rust/loading";
         // let load_path = "/home/RustPOSIX/test.txt";
@@ -725,6 +730,8 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
 
         let buffer = vec![0u8; 5*MB];
         let _ = load_fs(load_path,relative_path, 1);
+        println!("Leave loading phase");
+        std::io::stdout().flush().unwrap();
     }
     
 }
