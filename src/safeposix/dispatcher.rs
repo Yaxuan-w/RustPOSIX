@@ -714,7 +714,7 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
         let relative_path = "/home/lind/lind_project/src/safeposix-rust/loading";
 
         // const MB: usize = 4 * 1024 * 1024 * 1024;
-        const MB: usize = 1024 * 1024 * 1024;
+        const MB: usize = 3 * 1024 * 1024 * 1024;
 
         let ptr = allocate_aligned_memory(MB, 4096); 
         // let _ = std::mem::forget(ptr);
