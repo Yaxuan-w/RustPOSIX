@@ -16,9 +16,6 @@ use std::io::*;
 
 pub const METADATAFILENAME: &str = "lind.metadata";
 
-/* A.W.: 
-*   Commented
-*/
 pub const LOGFILENAME: &str = "lind.md.log";
 
 pub static FS_METADATA: interface::RustLazyGlobal<interface::RustRfc<FilesystemMetadata>> = 

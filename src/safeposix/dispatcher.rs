@@ -707,18 +707,14 @@ pub extern "C" fn lindrustinit(verbosity: isize, load_flag: bool) {
     cleartmp(true);
     
     if load_flag {
-        /* A.W.:
-        *   Add initialization steps
-        */
         println!("Entered loading phase");
         std::io::stdout().flush().unwrap();
 
         let load_path = "/home/lind/lind_project/src/safeposix-rust/test.txt";
         let relative_path = "/home/lind/lind_project/src/safeposix-rust/loading";
-        // let load_path = "/home/RustPOSIX/test.txt";
-        // let relative_path = "/home/RustPOSIX";
 
-        const MB: usize = 4 * 1024 * 1024 * 1024;
+        // const MB: usize = 4 * 1024 * 1024 * 1024;
+        const MB: usize = 1024 * 1024 * 1024;
 
         let ptr = allocate_aligned_memory(MB, 4096); 
         // let _ = std::mem::forget(ptr);
