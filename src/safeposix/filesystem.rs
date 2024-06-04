@@ -390,7 +390,9 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
             }
         }
         
+        cage.close_syscall(fd);
     }
+    
     Ok(())
     
 }
