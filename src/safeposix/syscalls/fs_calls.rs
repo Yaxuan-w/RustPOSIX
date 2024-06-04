@@ -1258,13 +1258,16 @@ impl Cage {
     }
 
     pub fn _close_helper_inner(&self, fd: i32) -> i32 {
-        println!("** Entered close");
+        println!("** Entered close with fd: {:?}", fd);
+        std::io::stdout().flush().unwrap();
+
+        println!("** fdtable {:?}", self.filedescriptortable);
         std::io::stdout().flush().unwrap();
 
         let checkedfd = self.get_filedescriptor(fd).unwrap();
         let mut unlocked_fd = checkedfd.write();
 
-        println!("** line 1267");
+        println!("** line 1267 {:?}", self.filedescriptortable);
         std::io::stdout().flush().unwrap();
 
         if let Some(filedesc_enum) = &mut *unlocked_fd {
