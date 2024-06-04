@@ -332,7 +332,8 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
             let _ = create_missing_directory(ancestor.to_str().unwrap(), cageid);
         }
 
-        let mut contentfile = interface::File::open(abs_content_path)?;
+        // let mut contentfile = interface::File::open(abs_content_path)?;
+        let mut contentfile = interface::File::open(abs_content_path.clone())?;
         let mut filedata = Vec::new();
         let _ = contentfile.read_to_end(&mut filedata)?;
         
@@ -389,7 +390,8 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
                 // panic!("File already exists in loading phasae");
             }
         }
-        
+        println!("Loaded File - {:?}", abs_content_path);
+        std::io::stdout().flush().unwrap();
         cage.close_syscall(fd);
     }
     
