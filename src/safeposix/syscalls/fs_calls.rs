@@ -54,7 +54,10 @@ impl Cage {
                 }
 
                 let filename = truepath.file_name().unwrap().to_str().unwrap().to_string(); //for now we assume this is sane, but maybe this should be checked later
-
+                
+                println!("filename [in open]: {:?}", filename);
+                std::io::stdout().flush().unwrap();
+                
                 if S_IFCHR == (S_IFCHR & flags) {
                     return syscall_error(Errno::EINVAL, "open", "Invalid value in flags");
                 } 
