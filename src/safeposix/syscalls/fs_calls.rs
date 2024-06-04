@@ -1258,6 +1258,9 @@ impl Cage {
     }
 
     pub fn _close_helper_inner(&self, fd: i32) -> i32 {
+        println!("** Entered close");
+        std::io::stdout().flush().unwrap();
+
         let checkedfd = self.get_filedescriptor(fd).unwrap();
         let mut unlocked_fd = checkedfd.write();
         if let Some(filedesc_enum) = &mut *unlocked_fd {
@@ -1313,11 +1316,17 @@ impl Cage {
                     }
                 }
                 File(ref normalfile_filedesc_obj) => {
+                    println!("** line 1319");
+                    std::io::stdout().flush().unwrap();
+
                     let inodenum = normalfile_filedesc_obj.inode;
                     let mut inodeobj = FS_METADATA.inodetable.get_mut(&inodenum).unwrap();
 
                     match *inodeobj {
                         Inode::File(ref mut normalfile_inode_obj) => {
+                            println!("** line 1327");
+                            std::io::stdout().flush().unwrap();
+
                             normalfile_inode_obj.refcount -= 1;
 
                             //if it's not a reg file, then we have nothing to close
