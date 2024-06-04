@@ -353,17 +353,20 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         // println!("[DEBUG] \nname: {:?} \nfile size: {:?} \nmemory block{:?}", emulated_file.filename, emulated_file.filesize, emulated_file.memory_block);
         // std::io::stdout().flush().unwrap();
 
-        let (fd, guardopt) = cage.get_next_fd(None);
+        // let (fd, guardopt) = cage.get_next_fd(None);
         // println!("[DEBUG] \nname: {:?} \nfile size: {:?} \nmemory block{:?}", emulated_file.filename, emulated_file.filesize, emulated_file.memory_block);
         // println!("fd: {:?}", fd);
         // std::io::stdout().flush().unwrap();
-        if fd < 0 { panic!("Cannot get fd table in loading phase"); }
+        // if fd < 0 { panic!("Cannot get fd table in loading phase"); }
         
         // let fdoption = &mut *guardopt.unwrap();
         let flags = O_RDWR | O_CREAT | O_APPEND;
         let mode = 0o777;
         let effective_mode = S_IFREG as u32 | mode;
-        if cage.open_syscall(&abs_content_path, flags, effective_mode) < 0 {
+        let fd = cage.open_syscall(&abs_content_path, flags, effective_mode);
+        if fd < 0 {
+            println!("fd: {:?}", fd);
+            std::io::stdout().flush().unwrap();
             panic!("Open error in loading phase");
         }
         // match metawalkandparent(truepath.as_path()) {
