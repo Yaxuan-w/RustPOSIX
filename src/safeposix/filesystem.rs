@@ -308,6 +308,9 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
     for (filename, filesize, filepath) in file_entries {
         let abs_content_path = format!("{}{}", content_path, filepath);
 
+        println!("Begin File - {:?}", abs_content_path);
+        std::io::stdout().flush().unwrap();
+
         // Adding dir
         let cage = interface::cagetable_getref(cageid);
         let truepath = normpath(convpath(filepath), &cage);
@@ -332,6 +335,9 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
             let _ = create_missing_directory(ancestor.to_str().unwrap(), cageid);
         }
 
+        println!("Line 338 File - {:?}", abs_content_path);
+        std::io::stdout().flush().unwrap();
+
         // let mut contentfile = interface::File::open(abs_content_path)?;
         let mut contentfile = interface::File::open(abs_content_path.clone())?;
         let mut filedata = Vec::new();
@@ -340,6 +346,9 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         // Create a new emulated file and write the contents
         let mut emulated_file = interface::openfile(filename.clone()).unwrap();
         let _ = emulated_file.writefile_from_bytes(&filedata).unwrap();
+
+        println!("Line 350 File - {:?}", abs_content_path);
+        std::io::stdout().flush().unwrap();
         
         // println!("[DEBUG] \nname: {:?} \nfile size: {:?} \nmemory block{:?}", emulated_file.filename, emulated_file.filesize, emulated_file.memory_block);
         // std::io::stdout().flush().unwrap();
@@ -393,6 +402,8 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         println!("Loaded File - {:?}", abs_content_path);
         std::io::stdout().flush().unwrap();
         cage.close_syscall(fd);
+        println!("Closed File - {:?}", abs_content_path);
+        std::io::stdout().flush().unwrap();
     }
     
     Ok(())
