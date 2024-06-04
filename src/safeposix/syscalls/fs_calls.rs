@@ -35,6 +35,9 @@ impl Cage {
         if fd < 0 { return fd }
         let fdoption = &mut *guardopt.unwrap();
 
+        println!("fd [in open]: {:?}", fd);
+        std::io::stdout().flush().unwrap();
+
         match metawalkandparent(truepath.as_path()) {
             //If neither the file nor parent exists
             (None, None) => {
