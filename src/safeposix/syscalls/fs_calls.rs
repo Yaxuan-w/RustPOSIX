@@ -1263,6 +1263,10 @@ impl Cage {
 
         let checkedfd = self.get_filedescriptor(fd).unwrap();
         let mut unlocked_fd = checkedfd.write();
+
+        println!("** line 1267");
+        std::io::stdout().flush().unwrap();
+
         if let Some(filedesc_enum) = &mut *unlocked_fd {
             //Decide how to proceed depending on the fd type.
             //First we check in the file descriptor to handle sockets (no-op), sockets (clean the socket), and pipes (clean the pipe),
