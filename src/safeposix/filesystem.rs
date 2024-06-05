@@ -366,6 +366,7 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
         let fd = cage.open_syscall(&abs_content_path, flags, effective_mode);
         if fd < 0 {
             println!("fd: {:?}", fd);
+            println!("abs_path: {:?}", abs_content_path);
             std::io::stdout().flush().unwrap();
             panic!("Open error in loading phase");
         }
