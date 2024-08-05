@@ -370,45 +370,45 @@ pub fn load_fs(input_path: &str, content_path: &str, cageid: u64) -> std::io::Re
             std::io::stdout().flush().unwrap();
             panic!("Open error in loading phase");
         }
-        // match metawalkandparent(truepath.as_path()) {
-        //     (None, None) => {
-        //         panic!("Cannot create files in loading phase: {:?}", truepath.as_path());
-        //     }
-        //     (None, Some(pardirinode)) => {
-        //         let mode = 0o777;
-        //         let effective_mode = S_IFREG as u32 | mode;
-        //         let time = interface::timestamp(); //We do a real timestamp now
-        //         let newinode = Inode::File(GenericInode {
-        //             size: filesize, uid: DEFAULT_UID, gid: DEFAULT_GID,
-        //             mode: effective_mode, linkcount: 1, refcount: 1,
-        //             atime: time, ctime: time, mtime: time,
-        //         });
-        //         let newinodenum = FS_METADATA.nextinode.fetch_add(1, interface::RustAtomicOrdering::Relaxed); //fetch_add returns the previous value, which is the inode number we want
-        //         if let Inode::Dir(ref mut ind) = *(FS_METADATA.inodetable.get_mut(&pardirinode).unwrap()) {
-        //             ind.filename_to_inode_dict.insert(filename.clone(), newinodenum);
-        //             ind.linkcount += 1;
-        //             //insert a reference to the file in the parent directory
-        //         } else {
-        //             panic!("It's a dictionary in loading phase");
-        //         }
+        match metawalkandparent(truepath.as_path()) {
+            (None, None) => {
+                panic!("Cannot create files in loading phase: {:?}", truepath.as_path());
+            }
+            (None, Some(pardirinode)) => {
+                let mode = 0o777;
+                let effective_mode = S_IFREG as u32 | mode;
+                let time = interface::timestamp(); //We do a real timestamp now
+                let newinode = Inode::File(GenericInode {
+                    size: filesize, uid: DEFAULT_UID, gid: DEFAULT_GID,
+                    mode: effective_mode, linkcount: 1, refcount: 1,
+                    atime: time, ctime: time, mtime: time,
+                });
+                let newinodenum = FS_METADATA.nextinode.fetch_add(1, interface::RustAtomicOrdering::Relaxed); //fetch_add returns the previous value, which is the inode number we want
+                if let Inode::Dir(ref mut ind) = *(FS_METADATA.inodetable.get_mut(&pardirinode).unwrap()) {
+                    ind.filename_to_inode_dict.insert(filename.clone(), newinodenum);
+                    ind.linkcount += 1;
+                    //insert a reference to the file in the parent directory
+                } else {
+                    panic!("It's a dictionary in loading phase");
+                }
                 
-        //         FS_METADATA.inodetable.insert(newinodenum, newinode);
-        //         if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
-        //             let _ = emulated_file.close();
-        //             vac.insert(emulated_file);
-        //         }
+                FS_METADATA.inodetable.insert(newinodenum, newinode);
+                if let interface::RustHashEntry::Vacant(vac) = FILEOBJECTTABLE.entry(newinodenum){
+                    let _ = emulated_file.close();
+                    vac.insert(emulated_file);
+                }
                 
-        //         // Add to FDTABLE
-        //         let position = if 0 != flags & O_APPEND {filesize} else {0};
-        //         let allowmask = O_RDWRFLAGS | O_CLOEXEC;
-        //         let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
-        //         let _insertval = fdoption.insert(FileDescriptor::File(newfd));
+                // Add to FDTABLE
+                // let position = if 0 != flags & O_APPEND {filesize} else {0};
+                // let allowmask = O_RDWRFLAGS | O_CLOEXEC;
+                // let newfd = FileDesc {position: position, inode: newinodenum, flags: flags & allowmask, advlock: interface::RustRfc::new(interface::AdvisoryLock::new())};
+                // let _insertval = fdoption.insert(FileDescriptor::File(newfd));
                 
-        //     }
-        //     (Some(_inodenum), ..) => {
-        //         // panic!("File already exists in loading phasae");
-        //     }
-        // }
+            }
+            (Some(_inodenum), ..) => {
+                // panic!("File already exists in loading phasae");
+            }
+        }
         println!("Loaded File - {:?}", abs_content_path);
         std::io::stdout().flush().unwrap();
         cage.close_syscall(fd);
